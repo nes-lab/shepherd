@@ -210,7 +210,8 @@ class SharedMemGPIOOutput:
             return None  # nothing to do
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
-        # TODO: align code with others - put subchunking in another FN to get only precompiled views
+        # TODO: align code with others mem-classes -
+        #       put subchunking in another FN to get only precompiled views
 
         if discard or self.fill_level > 0.8:
             # show an error here, as we will now drop samples

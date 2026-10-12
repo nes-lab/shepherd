@@ -22,10 +22,11 @@ class IVRecorder(Monitor):
         super().__init__(
             target,
             poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
-            increment=10 * SharedMemIVOutput.N_SAMPLES_PER_CHUNK // reduction_factor,
+            chunk_size=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
+            # NOTE: was 10 x CHUNK/REDUCTION_FACTOR, BUT performance was worse!
         )
-        if reduction_factor not in [1, 10, 100, 1000, 10000, 100_000]:
-            raise ValueError("reduction-factor must be 10^n, n=[0..5]")
+        if reduction_factor not in [1, 10, 100, 1_000, 10_000]:
+            raise ValueError("reduction-factor must be 10^n, n=[0..4]")
         # this monitor won't create its own datasets
         self.reduction_factor: int = reduction_factor
         self.reduce: bool = self.reduction_factor != 1
@@ -36,6 +37,10 @@ class IVRecorder(Monitor):
                 SharedMemIVOutput.N_SAMPLES_PER_CHUNK // self.reduction_factor,
             ).astype(np.uint64)
         )
+        self.debug: bool = False
+        self.transform_data = (
+            self.transform_data_reduce if self.reduce else self.transform_data_full
+        )
 
         self.dropped_data = False
         self.queue_size = int(
@@ -44,7 +49,7 @@ class IVRecorder(Monitor):
         self.queue = Queue(maxsize=self.queue_size)
         log.debug("[%s] buffered with queue-size = %d", type(self).__name__, self.queue_size)
         self.thread = threading.Thread(
-            target=self.thread_fn_reduce if self.reduce else self.thread_fn,
+            target=self.thread_fn,
             daemon=True,
             name="Shp.H5Rec.IV",
         )
@@ -58,7 +63,7 @@ class IVRecorder(Monitor):
         extra_arg: int = 0,
     ) -> None:
         self.flush_queue()
-        self.finalize_write()
+        self.shutdown_thread()
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
@@ -66,106 +71,78 @@ class IVRecorder(Monitor):
         self.data["current"].resize((self.position,))
         super().__exit__()
 
-    def finalize_write(self) -> int:
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=20 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
-        return self.position
-
     def write(self, data: IVTrace) -> None:
         if self.queue.full():
             self.dropped_data = True
             return  # drop package
+        if len(data) < 1:
+            return
         data_new = copy.deepcopy(data)
         self.queue.put(data_new)
+
+    def transform_data_full(self, data: IVTrace) -> IVTrace:
+        len_data = len(data)
+        data.ds_voltage = data.ds_voltage[:len_data]
+        data.ds_current = data.ds_current[:len_data]
+        data.ds_time = (
+            self.buffer_timeseries[:len_data] + data.ds_time
+            if isinstance(data.ds_time, int)
+            else data.ds_time[:len_data]
+        )
+        return data
+
+    def transform_data_reduce(self, data: IVTrace) -> IVTrace:
+        len_redu = len(data) // self.reduction_factor
+        len_data = len_redu * self.reduction_factor
+        if self.debug:
+            if len_data < self.reduction_factor:  # is 1 when not used
+                raise ValueError("IV-Tracer Input is smaller than reduction factor")
+            if len_data % self.reduction_factor != 0:
+                raise ValueError("IV-Tracer Input is not multiple of reduction factor")
+        # reduce, aka resampling via binning
+        # Note: input is u18, max reduction is 10k (u14), so u32 should be fine
+        data.ds_voltage = (
+            data.ds_voltage[:len_data]
+            .reshape(len_redu, self.reduction_factor)
+            .mean(axis=1, dtype=np.uint64)
+            .clip(0, 2**32 - 1)
+            .astype(np.uint32)
+        )
+        data.ds_current = (
+            data.ds_current[:len_data]
+            .reshape(len_redu, self.reduction_factor)
+            .mean(axis=1, dtype=np.uint64)
+            .clip(0, 2**32 - 1)
+            .astype(np.uint32)
+        )
+        # timestamps are automatically reduced
+        if isinstance(data.ds_time, int):
+            data.ds_time = self.buffer_timeseries[:len_redu] + data.ds_time
+        else:
+            # benchmarked slices: [:] is as fast as [::1] on BBB
+            data.ds_time = data.ds_time[: len_data : self.reduction_factor]
+        return data
 
     def thread_fn(self) -> None:  # optimized for normal operation
         while not self.event.is_set():
             if self.queue.empty():
                 self.event.wait(self.poll_interval)  # rate limiter
             else:
-                data = self.queue.get()
-                len_add = len(data)
-                if len_add < 1:
-                    return
-                if isinstance(data.timestamp_ns, int):
-                    data.timestamp_ns = self.buffer_timeseries + data.timestamp_ns
-                pos_end = self.position + len_add
+                data = self.transform_data(self.queue.get())
+                pos_end = self.position + len(data)
                 data_length = len(self.data["voltage"])  # faster .shape[0]
                 if pos_end >= data_length:
-                    data_length += self.increment
+                    data_length += self.increment_size
                     # TODO: faster with direct naming? i.e. self.ds_time
                     self.data["voltage"].resize((data_length,))
                     self.data["current"].resize((data_length,))
                     self.data["time"].resize((data_length,))
 
-                self.data["voltage"][self.position : pos_end] = data.voltage
-                self.data["current"][self.position : pos_end] = data.current
-                self.data["time"][self.position : pos_end] = data.timestamp_ns
+                self.data["voltage"][self.position : pos_end] = data.ds_voltage
+                self.data["current"][self.position : pos_end] = data.ds_current
+                self.data["time"][self.position : pos_end] = data.ds_time
                 self.position = pos_end
         # TODO: catch OSError - "Failed to write data to HDF5-File - will STOP! error = %s",
-        log.debug("[%s] thread ended itself", type(self).__name__)
-
-    def thread_fn_reduce(self) -> None:
-        while not self.event.is_set():
-            if self.queue.empty():
-                self.event.wait(self.poll_interval)  # rate limiter
-            else:
-                data = self.queue.get()
-                len_add = len(data)
-                if len_add < self.reduction_factor:  # is 1 when not used
-                    return
-                if len_add % self.reduction_factor != 0:
-                    log.warning("Power-Tracer Input got odd size - some samples will be discarded")
-                len_red = len(data) // self.reduction_factor
-                len_add = len_red * self.reduction_factor
-
-                # timestamps are automatically reduced
-                if isinstance(data.timestamp_ns, int):
-                    data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
-                elif isinstance(data.timestamp_ns, np.ndarray):
-                    # benchmarked slices: [:] is as fast as [::1] on BBB
-                    data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
-                else:
-                    raise TypeError("timestamp_ns must be int or np.ndarray")
-
-                if self.reduce:  # aka resampling via binning
-                    # Note: input is u18, max reduction is 10k (u14), so u32 should be fine
-                    data.voltage = (
-                        data.voltage[:len_add]
-                        .reshape(len_red, self.reduction_factor)
-                        .mean(axis=1, dtype=np.uint64)
-                        .clip(0, 2**32)
-                        .astype(np.uint32)
-                    )
-                    data.current = (
-                        data.current[:len_add]
-                        .reshape(len_red, self.reduction_factor)
-                        .mean(axis=1, dtype=np.uint64)
-                        .clip(0, 2**32)
-                        .astype(np.uint32)
-                    )
-                    len_add = len_red
-
-                # add to file
-                data_end_pos = self.position + len_add
-                data_length_h5 = len(self.data["voltage"])
-                if data_end_pos >= data_length_h5:
-                    data_length_h5 += self.increment
-                    self.data["voltage"].resize((data_length_h5,))
-                    self.data["current"].resize((data_length_h5,))
-                    self.data["time"].resize((data_length_h5,))
-
-                self.data["voltage"][self.position : data_end_pos] = data.voltage
-                self.data["current"][self.position : data_end_pos] = data.current
-                self.data["time"][self.position : data_end_pos] = data.timestamp_ns
-                self.position = data_end_pos
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def check_status(self) -> None:
@@ -189,3 +166,16 @@ class IVRecorder(Monitor):
             log.error("Recorder missed ~ %.3f s IVTrace before end", t_end - file_end)
             had_error = True
         return had_error
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        runtime_addition = 0
+        datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
+        data_length = max(
+            len(self.data["time"]),
+            self.increment_size,
+            round(datarate_sps * (runtime_addition + value_s)),
+        )
+        self.data["time"].resize((data_length,))
+        self.data["voltage"].resize((data_length,))
+        self.data["current"].resize((data_length,))

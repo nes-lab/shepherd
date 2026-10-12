@@ -24,17 +24,20 @@ class GpioRecorder(Monitor):
             target,
             compression,
             poll_interval=0.1,
-            increment=SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK,
+            chunk_size=SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK,
+            increment_factor=100,
+            # NOTE: 5x to 10x has significantly worse performance
         )
 
         self.data.create_dataset(
             name="value",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype="u2",
             maxshape=(None,),
-            chunks=(self.increment,),
+            chunks=(self.chunk_size,),
             compression=compression,
-            shuffle=True,
+            # shuffle does not help here,
+            # even for optimal 1-bit changes (size unchanged, performance-hit)
         )
         self.data["value"].attrs["unit"] = "n"
         self.data["value"].attrs["description"] = ryaml.dumps(GPIO_LOG_BIT_POSITIONS)
@@ -86,7 +89,7 @@ class GpioRecorder(Monitor):
                 pos_end = self.position + len_new
                 data_length = len(self.data["time"])  # a faster .shape[0]
                 if pos_end >= data_length:
-                    data_length += max(self.increment, pos_end - data_length)
+                    data_length += max(self.increment_size, pos_end - data_length)
                     self.data["time"].resize((data_length,))
                     self.data["value"].resize((data_length,))
                 self.data["time"][self.position : pos_end] = data.timestamps_ns
@@ -97,3 +100,7 @@ class GpioRecorder(Monitor):
 
     def check_status(self) -> None:
         return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        # leave as is

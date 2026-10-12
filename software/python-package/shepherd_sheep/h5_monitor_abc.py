@@ -17,13 +17,15 @@ class Monitor(ABC):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         poll_interval: float = 0.25,
-        increment: int = 100,
+        chunk_size: int = 100,
+        increment_factor: int = 10,
     ) -> None:
         self.data: h5py.Group = target
         self.poll_interval: float = poll_interval
         self.rate_limit_interval: float = 0.1 * poll_interval
         self.position: int = 0
-        self.increment: int = increment
+        self.chunk_size: int = chunk_size
+        self.increment_size: int = increment_factor * chunk_size
         self.event = threading.Event()
         self.thread: threading.Thread | None = None
 
@@ -31,10 +33,10 @@ class Monitor(ABC):
         if "time" not in self.data:
             self.data.create_dataset(
                 name="time",
-                shape=(self.increment,),
+                shape=(self.increment_size,),
                 dtype="u8",
                 maxshape=(None,),
-                chunks=(self.increment,),
+                chunks=(self.chunk_size,),
                 compression=compression,
                 shuffle=True,
             )
@@ -43,10 +45,10 @@ class Monitor(ABC):
             self.data["time"].attrs["gain"] = 1e-9
             self.data["time"].attrs["offset"] = 0
         log.debug(
-            "[%s] Activated (t_poll=%.3fs, increment=%d)",
+            "[%s] Activated (t_poll=%.3fs, chunk_size=%d)",
             type(self).__name__,
             self.poll_interval,
-            self.increment,
+            self.chunk_size,
         )
 
     def __exit__(
@@ -97,3 +99,7 @@ class Monitor(ABC):
                 return False
             self.event.wait(self.poll_interval)
         return True
+
+    @abstractmethod
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""

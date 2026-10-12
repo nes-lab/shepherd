@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import platform
 import time
 from contextlib import ExitStack
@@ -65,7 +65,7 @@ class ShepherdHarvester(ShepherdIO):
 
         store_path = cfg.output_path.resolve()
         if store_path.is_dir():
-            timestamp = datetime.datetime.fromtimestamp(self.start_time, tz=local_tz())
+            timestamp = dt.datetime.fromtimestamp(self.start_time, tz=local_tz())
             timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
             # ⤷ closest to ISO 8601, avoids ":"
             store_path /= f"hrv_{timestring}.h5"

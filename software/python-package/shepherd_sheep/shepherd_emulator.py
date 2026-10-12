@@ -255,6 +255,17 @@ class ShepherdEmulator(ShepherdIO):
         )
         dur_sleep_load = dur_sleep_idle / 2
 
+        # determine runtime and preshape some datasets
+        duration_s = sys.float_info.max
+        if self.cfg.duration is not None:
+            duration_s = int(self.cfg.duration.total_seconds())
+            log.debug("Duration = %.1f s (configured runtime)", duration_s)
+        if self.reader.runtime_s < duration_s:
+            duration_s = int(self.reader.runtime_s)
+            log.debug("Duration = %.1f s (runtime of input file)", duration_s)
+        if self.writer is not None:
+            self.writer.preshape_by_runtime(duration_s)
+
         log.info("waiting %.2f s until start", self.start_time - time.time())
         while self.wait_for_start(1, raising=False):
             # pre-experiment loop that collects pru-util values
@@ -272,13 +283,7 @@ class ShepherdEmulator(ShepherdIO):
         if not check_pru_applied_settings():
             log.error("PRU has NOT yet applied the settings!")
 
-        duration_s = sys.float_info.max
-        if self.cfg.duration is not None:
-            duration_s = int(self.cfg.duration.total_seconds())
-            log.debug("Duration = %.1f s (configured runtime)", duration_s)
-        if self.reader.runtime_s < duration_s:
-            duration_s = int(self.reader.runtime_s)
-            log.debug("Duration = %.1f s (runtime of input file)", duration_s)
+        # configure end of measurement
         ts_end = self.start_time + duration_s
         ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)

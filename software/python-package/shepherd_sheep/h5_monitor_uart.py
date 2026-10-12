@@ -25,10 +25,10 @@ class UARTMonitor(Monitor):
         self.config = config
         self.data.create_dataset(
             name="message",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.chunk_size,),
             compression=compression,
         )
         self.data["message"].attrs["description"] = "raw ascii-bytes"
@@ -96,7 +96,7 @@ class UARTMonitor(Monitor):
                         if len(output) > 0:
                             data_length = len(self.data["time"])  # a faster .shape[0]
                             if self.position >= data_length:
-                                data_length += self.increment
+                                data_length += self.increment_size
                                 self.data["time"].resize((data_length,))
                                 self.data["message"].resize((data_length,))
                             self.data["time"][self.position] = int(
@@ -131,3 +131,7 @@ class UARTMonitor(Monitor):
 
     def check_status(self) -> None:
         return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        # leave as is

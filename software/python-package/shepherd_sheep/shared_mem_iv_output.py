@@ -204,6 +204,7 @@ class SharedMemIVOutput:
 
         # prepare & fetch data
         if chunk_ts_end < self.xp_start:
+            # TODO: should not be possible with current pru-fw
             chunk_data = None
             log.debug(
                 "[%s] Discarded data - TS before start of experiment (t_pru = %d).",

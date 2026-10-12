@@ -83,6 +83,7 @@ class Writer(CoreWriter):
         self.samplerate_sps: int = 10**9 // commons.SAMPLE_INTERVAL_NS
         self.reduce: bool = False
         self.reduction_factor: int = 1
+        self.iv_discard: bool = False
         if cfg_pwr is not None:
             if cfg_pwr.samplerate not in self.RATES_SUPPORTED:
                 raise ValueError(
@@ -92,8 +93,11 @@ class Writer(CoreWriter):
             self.reduce: bool = cfg_pwr.samplerate != self.samplerate_sps
             self.reduction_factor: int = self.samplerate_sps // cfg_pwr.samplerate
             self.samplerate_sps = cfg_pwr.samplerate
-        if self.reduce:
-            log.info("Activated custom sample-rate: %d", self.samplerate_sps)
+            if self.reduce:
+                log.info("Activated custom sample-rate: %d", self.samplerate_sps)
+        else:
+            self.iv_discard = True
+            log.info("IVRecorder is disabled!")
 
         self.cfg_pwr = cfg_pwr
         self.only_power = cfg_pwr.only_power if cfg_pwr is not None else False
@@ -114,6 +118,7 @@ class Writer(CoreWriter):
             big_chunks=False,
             modify_existing=modify_existing,
             force_overwrite=force_overwrite,
+            h5_perf=True,
             verbose=verbose,
         )
 
@@ -217,6 +222,8 @@ class Writer(CoreWriter):
         Args:
             data: buffer-segment containing IV data
         """
+        if self.iv_discard:
+            return
         if self.iv_ts_limited:
             ts_chunk = data.timestamp_ns()
             if (ts_chunk > self.iv_ts_stop) or (ts_chunk < self.iv_ts_start):
@@ -275,3 +282,11 @@ class Writer(CoreWriter):
         for monitor in self.monitors:
             if hasattr(monitor, "check_status"):
                 monitor.check_status()
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        for monitor in self.monitors:
+            monitor.preshape_by_runtime(value_s)
+        self.rec_pru.preshape_by_runtime(value_s)
+        self.rec_gpio.preshape_by_runtime(value_s)
+        self.rec_iv.preshape_by_runtime(value_s)

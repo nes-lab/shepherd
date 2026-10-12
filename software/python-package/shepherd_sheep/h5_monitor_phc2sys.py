@@ -21,10 +21,10 @@ class PHC2SYSMonitor(Monitor):
         super().__init__(target, compression, poll_interval=0.51)
         self.data.create_dataset(
             name="values",
-            shape=(self.increment, 3),
+            shape=(self.increment_size, 3),
             dtype="i8",
             maxshape=(None, 3),
-            chunks=True,
+            chunks=(self.chunk_size, 3),
         )
         self.data["values"].attrs["unit"] = "ns, Hz, ns"
         self.data["values"].attrs["description"] = "phc offset [ns], s2 freq [Hz], path delay [ns]"
@@ -96,7 +96,7 @@ class PHC2SYSMonitor(Monitor):
             try:
                 data_length = len(self.data["time"])  # a faster .shape[0]
                 if self.position >= data_length:
-                    data_length += self.increment
+                    data_length += self.increment_size
                     self.data["time"].resize((data_length,))
                     self.data["values"].resize((data_length, 3))
             except RuntimeError:
@@ -132,3 +132,15 @@ class PHC2SYSMonitor(Monitor):
                 type(self).__name__,
                 freq_Hz * 1e-6,
             )
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        runtime_addition = 30
+        datarate_sps = 1
+        data_length = max(
+            len(self.data["time"]),
+            self.increment_size,
+            round(datarate_sps * (runtime_addition + value_s)),
+        )
+        self.data["time"].resize((data_length,))
+        self.data["values"].resize((data_length, 3))

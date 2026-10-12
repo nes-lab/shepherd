@@ -23,15 +23,15 @@ class PruRecorder(Monitor):
             target,
             compression,
             poll_interval=0.66 * SharedMemUtilOutput.DURATION_CHUNK_S,
-            increment=10 * SharedMemUtilOutput.N_SAMPLES_PER_CHUNK,
+            chunk_size=SharedMemUtilOutput.N_SAMPLES_PER_CHUNK,  # 2 s
         )
 
         self.data.create_dataset(
             name="values",
-            shape=(self.increment, 3),
+            shape=(self.increment_size, 3),
             dtype="u2",
             maxshape=(None, 3),
-            chunks=(self.increment, 3),
+            chunks=(self.chunk_size, 3),
             compression=compression,
         )
 
@@ -41,9 +41,6 @@ class PruRecorder(Monitor):
             "pru0_vsrc_tsample_max [ns], "
             f"pru1_gpio_tsample_max [ns/{commons.SAMPLE_INTERVAL_NS}ns]"
         )
-        # reset increment AFTER creating all dsets are created
-        self.increment = 1000  # 100 s
-        # TODO: make dependent from commons.BUFFER_GPIO_SAMPLES_N
 
         self.dropped_data = False
         self.direct = False
@@ -95,7 +92,7 @@ class PruRecorder(Monitor):
         pos_end = self.position + len_new
         data_length = len(self.data["time"])
         if pos_end >= data_length:
-            data_length += max(self.increment, pos_end - data_length)
+            data_length += max(self.increment_size, pos_end - data_length)
             self.data["values"].resize((data_length, 3))
             self.data["time"].resize((data_length,))
         self.data["time"][self.position : pos_end] = data.timestamps_ns
@@ -114,3 +111,15 @@ class PruRecorder(Monitor):
 
     def check_status(self) -> None:
         return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        runtime_addition = 30
+        datarate_sps = 1.0 / SharedMemUtilOutput.DURATION_SAMPLE_S
+        data_length = max(
+            len(self.data["time"]),
+            self.increment_size,
+            round(datarate_sps * (runtime_addition + value_s)),
+        )
+        self.data["time"].resize((data_length,))
+        self.data["values"].resize((data_length, 3))

@@ -21,10 +21,10 @@ class NTPMonitor(Monitor):
         super().__init__(target, compression, poll_interval=0.99)
         self.data.create_dataset(
             name="message",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.chunk_size,),
         )
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -88,7 +88,7 @@ class NTPMonitor(Monitor):
             try:
                 data_length = len(self.data["time"])  # a faster .shape[0]
                 if self.position >= data_length:
-                    data_length += self.increment
+                    data_length += self.increment_size
                     self.data["time"].resize((data_length,))
                     self.data["message"].resize((data_length,))
             except RuntimeError:
@@ -109,3 +109,15 @@ class NTPMonitor(Monitor):
 
     def check_status(self) -> None:
         return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        runtime_addition = 30
+        datarate_sps = 1
+        data_length = max(
+            len(self.data["time"]),
+            self.increment_size,
+            round(datarate_sps * (runtime_addition + value_s)),
+        )
+        self.data["time"].resize((data_length,))
+        self.data["message"].resize((data_length,))

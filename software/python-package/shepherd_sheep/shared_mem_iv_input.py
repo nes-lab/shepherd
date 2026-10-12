@@ -35,9 +35,9 @@ class IVTrace:
 
     def __len__(self) -> int:
         if isinstance(self.ds_time, int | None):
-            return min(self.ds_voltage.size, self.ds_current.size)
+            return min(len(self.ds_voltage), len(self.ds_current))
         if isinstance(self.ds_time, np.ndarray):
-            return min(self.ds_voltage.size, self.ds_current.size, self.ds_time.size)
+            return min(len(self.ds_voltage), len(self.ds_current), len(self.ds_time))
         raise TypeError("Got unexpected timestamp type")
 
     def timestamp_s(self) -> float:
