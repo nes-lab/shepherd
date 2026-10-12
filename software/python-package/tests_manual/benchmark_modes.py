@@ -84,11 +84,11 @@ def calculate_stats(file: Path, title: str) -> None:
         datarate = file.stat().st_size / (60 * 2**20)
         notes = []
         if not reader.is_valid() or reader.count_errors_in_log() > 0:
-            notes.append("faulty")
+            notes.append("had errors")
         if reader.runtime_s < 60:
             notes.append("incomplete")
         if cpu_mean > 90:
-            notes.append("overload")
+            notes.append("high load")
     log.info(
         "| %s | %d | %d | %.1f | %.3f | %s |",
         title.ljust(34),
@@ -247,6 +247,7 @@ def bench_emu_sweep_starttime() -> None:
                 virtual_source=VirtualSourceConfig(name="neutral"),
                 uart_logging=None,
                 gpio_tracing=None,
+                output_compression=Compression.lzf,
             )
             log.info(title)
             time.sleep(5)
@@ -274,6 +275,7 @@ def bench_emu_sweep_samplerate_poweronly() -> None:
                     uart_logging=None,
                     gpio_tracing=None,
                     power_tracing=power_tracer,
+                    output_compression=Compression.lzf,
                 )
                 log.info(title)
                 time.sleep(5)
@@ -321,6 +323,7 @@ def bench_emu_sweep_input_compression() -> None:
                 virtual_source=VirtualSourceConfig(name="neutral"),
                 uart_logging=None,
                 gpio_tracing=None,
+                output_compression=Compression.lzf,
             )
             log.info(title)
             time.sleep(5)
@@ -347,6 +350,7 @@ def bench_emu_sweep_input_options() -> None:
                     virtual_source=VirtualSourceConfig(name="neutral"),
                     uart_logging=None,
                     gpio_tracing=None,
+                    output_compression=Compression.lzf,
                 )
                 log.info(title)
                 time.sleep(5)
@@ -391,6 +395,7 @@ def bench_emu_sweep_datarates() -> None:
                     io_port=TargetPort.A,
                     pwr_port=TargetPort.A,
                     enable_io=True,
+                    output_compression=Compression.lzf,
                 )
                 log.info(title)
                 time.sleep(5)
