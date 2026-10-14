@@ -2,7 +2,7 @@
 
 #include "hw_config.h"
 
-bool power_good_update(void)
+inline bool power_good_update(void)
 {
 #ifdef GPIO_POWER_GOOD_HIGH
     if (SHARED_MEM.vsource_power_good_trigger_for_pru1)
