@@ -55,7 +55,7 @@ from shepherd_sheep.shepherd_run_functions import run_programmer
 
 path_storage = Path("/var/shepherd/recordings")
 path_firmware = Path(__file__).parent / "firmwares"
-skip_hrv = True
+skip_hrv = False
 
 log.info("| %s | cpu_min | cpu_max | cpu_mean | MiB/s | note |", "type".ljust(34))
 log.info("|------------------------------------|---------|---------|----------|-------|------|")
@@ -212,7 +212,7 @@ def generate_harvest_file(
     duration = 60
     if not path.exists():
         rng = np.random.default_rng()
-        samples_per_1s = HrvWriter.CHUNK_SAMPLES_N * 10
+        samples_per_1s = 100_000
         with HrvWriter(
             path,
             datatype=EnergyDType.ivsample,
@@ -381,6 +381,7 @@ def bench_emu_sweep_datarates() -> None:
                     protocol=ProgrammerProtocol.SWD,
                 )
                 run_programmer(cfg)
+                generate_harvest_file(random=False)
                 path_input = generate_shepherd_file(Compression.lzf, random=False, scaled=True)
                 time_start = int(time.time() + 25)
                 cfg = EmulationTask(
@@ -401,31 +402,6 @@ def bench_emu_sweep_datarates() -> None:
                 time.sleep(5)
                 run_emulator(cfg)
             calculate_stats(path_output, title)
-
-
-def bench_emu_hrvformat() -> None:
-    for _type in ["ivtrace"]:  # , "notrace"]:
-        title = f"EMU hrvformat-input {_type}"
-        path_output = path_storage / f"emu_hrvformat_{_type}.h5"
-        if not path_output.exists():
-            path_input = generate_harvest_file(random=True)
-            time_start = int(time.time() + 25)
-            cfg = EmulationTask(
-                input_path=path_input,
-                output_path=path_output,
-                duration=60,
-                use_cal_default=True,
-                time_start=time_start,
-                virtual_source=VirtualSourceConfig(name="neutral"),
-                uart_logging=None,
-                gpio_tracing=None,
-                output_compression=Compression.lzf,
-                power_tracing=PowerTracing() if _type == "ivtrace" else None,
-            )
-            log.info(title)
-            time.sleep(5)
-            run_emulator(cfg)
-        calculate_stats(path_output, title)
 
 
 def bench_emu_debug_log() -> None:
@@ -454,12 +430,39 @@ def bench_emu_debug_log() -> None:
         calculate_stats(path_output, title)
 
 
-def bench_emu_optimized() -> None:
+def bench_emu_optimized_hrvformat() -> None:
     for _type in ["ivtrace", "notrace"]:
-        title = f"EMU optimized {_type}"
-        path_output = path_storage / f"emu_optimized_{_type}.h5"
+        title = f"EMU optimized hrvformat {_type}"
+        path_output = path_storage / f"emu_optimized_hrvformat_{_type}.h5"
         if not path_output.exists():
             path_input = generate_harvest_file(random=True)
+            time_start = int(time.time() + 25)
+            cfg = EmulationTask(
+                input_path=path_input,
+                output_path=path_output,
+                duration=60,
+                use_cal_default=True,
+                time_start=time_start,
+                virtual_source=VirtualSourceConfig(name="neutral"),
+                uart_logging=None,
+                gpio_tracing=None,
+                output_compression=Compression.lzf,
+                power_tracing=PowerTracing() if _type == "ivtrace" else None,
+            )
+            log.info(title)
+            time.sleep(5)
+            run_emulator(cfg)
+        calculate_stats(path_output, title)
+
+
+def bench_emu_optimized() -> None:
+    for _type in ["ivtrace", "notrace"]:
+        title = f"EMU optimized ShpInput {_type}"
+        path_output = path_storage / f"emu_optimized_{_type}.h5"
+        if not path_output.exists():
+            path_input = generate_shepherd_file(
+                compression=Compression.lzf, random=True, scaled=True
+            )
             # ⤷ optimization: preshaped, scaled, lzf-compressed
             time_start = int(time.time() + 25)
             # ⤷ optimization:
@@ -485,7 +488,7 @@ def bench_emu_optimized() -> None:
 if __name__ == "__main__":
     bench_emu_optimized()
     # bench_emu_debug_log() no cpu-util avail
-    bench_emu_hrvformat()
+    bench_emu_optimized_hrvformat()
 
     bench_emu_sweep_datarates()
     bench_emu_sweep_input_options()

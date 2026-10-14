@@ -95,7 +95,7 @@ def test_h5writer_data(
     with h5py.File(d, "r") as written:
         assert "data" in written
         assert "time" in written["data"]
-        for variable in ["voltage", "current"]:
+        for variable in ["ds_voltage", "ds_current"]:
             assert variable in written["data"]  # .keys()
             ref_var = getattr(data_buffer, variable)
             assert all(written["data"][variable][:] == ref_var)
