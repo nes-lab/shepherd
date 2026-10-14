@@ -26,6 +26,7 @@ def writer(tmp_path: Path, mode: str) -> Generator[Writer, None, None]:
         cal_data=CalibrationHarvester(),
         force_overwrite=True,
         file_path=tmp_path / "test.h5",
+        cfg_pwr=PowerTracing(),
     ) as _w:
         yield _w
 

@@ -5,6 +5,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.base.calibration import CalibrationSeries
@@ -88,17 +89,24 @@ def test_h5writer_data(
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest.h5"
-    with Writer(file_path=d, cal_data=cal_cape.harvester, mode=mode) as log:
+    with Writer(
+        file_path=d,
+        cal_data=cal_cape.harvester,
+        mode=mode,
+        cfg_pwr=PowerTracing(),
+    ) as log:
         log.write_iv_buffer(data_buffer)
         log.flush_queues()
 
     with h5py.File(d, "r") as written:
         assert "data" in written
+
         assert "time" in written["data"]
-        for variable in ["ds_voltage", "ds_current"]:
-            assert variable in written["data"]  # .keys()
-            ref_var = getattr(data_buffer, variable)
-            assert all(written["data"][variable][:] == ref_var)
+        assert "voltage" in written["data"]
+        assert "current" in written["data"]
+
+        assert all(written["data"]["voltage"][:] == data_buffer.ds_voltage)
+        assert all(written["data"]["current"][:] == data_buffer.ds_current)
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
@@ -108,7 +116,7 @@ def test_calibration_logging(
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "recording.h5"
-    with Writer(file_path=d, mode=mode, cal_data=cal_cape.harvester) as _:
+    with Writer(file_path=d, mode=mode, cal_data=cal_cape.harvester, cfg_pwr=PowerTracing()) as _:
         pass
 
     h5store = h5py.File(d, "r")
@@ -146,6 +154,7 @@ def test_h5writer_performance(
         file_path=d,
         force_overwrite=True,
         cal_data=cal_cape.harvester,
+        cfg_pwr=PowerTracing(),
     ) as log:
         log.write_iv_buffer(data_buffer)
         log.flush_queues()

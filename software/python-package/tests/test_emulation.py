@@ -70,6 +70,7 @@ def writer(tmp_path: Path) -> Generator[Writer, None, None]:
         file_path=tmp_path / "test.h5",
         mode="emulator",
         cal_data=cal,
+        cfg_pwr=PowerTracing(),
     ) as _w:
         yield _w
 

@@ -146,6 +146,7 @@ def iv_to_file(path: Path, data: list[IVTrace], compression: Compression) -> Non
         verbose=False,
         force_overwrite=True,
         compression=compression,
+        cfg_pwr=PowerTracing(),
     ) as sw:
         sw.store_hostname("Emu")
         for _date in data:
