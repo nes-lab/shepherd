@@ -3,8 +3,6 @@
 - name: Migrate to newer kernel
   hosts: sheep
   become: true
-  # strategy: free  # noqa: run-once[play]
-  # ⤷ ansible won't wait for every host to continue next task
   vars:
     new_kernel_version: "6.18.53-bone55"
     update_pssp: true

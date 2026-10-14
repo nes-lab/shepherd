@@ -21,7 +21,6 @@
 - name: PTP-Host -> update service-config
   hosts: sheep
   become: true
-  strategy: free # noqa: run-once[play]
   roles:
     - ptp_host
     # Tuning is now completely integrated here
