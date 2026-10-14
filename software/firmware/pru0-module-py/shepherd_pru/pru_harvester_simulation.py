@@ -14,8 +14,8 @@ from unittest.mock import patch
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.content.virtual_harvester_config import VirtualHarvesterConfig
 from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
-from shepherd_core.reader import Reader
-from shepherd_core.writer import Writer
+from shepherd_core.reader import Reader as CoreReader
+from shepherd_core.writer import Writer as CoreWriter
 from tqdm import tqdm
 
 from .pru_harvester_model import PruHarvesterModel
@@ -42,13 +42,13 @@ def simulate_harvester(
     """
     # return sim_hrv_core(config, path_input, path_output)
     with ExitStack() as stack:
-        file_inp = Reader(path_input, verbose=False)
+        file_inp = CoreReader(path_input, verbose=False)
         stack.enter_context(file_inp)
         cal_inp = file_inp.get_calibration_data()
 
         if path_output:
             cal_hrv = CalibrationHarvester()
-            file_out = Writer(
+            file_out = CoreWriter(
                 path_output, cal_data=cal_hrv, mode="harvester", verbose=False, force_overwrite=True
             )
             stack.enter_context(file_out)
@@ -70,7 +70,7 @@ def simulate_harvester(
         ):
             v_uV = cal_inp.voltage.raw_to_si(v_inp) * 1e6
             i_nA = cal_inp.current.raw_to_si(i_inp) * 1e9
-            length = min(v_uV.size, i_nA.size)
+            length = min(len(v_uV), len(i_nA))
             for _n in range(length):
                 v_uV[_n], i_nA[_n] = hrv.ivcurve_sample(
                     _voltage_uV=int(v_uV[_n]), _current_nA=int(i_nA[_n])

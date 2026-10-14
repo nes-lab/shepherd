@@ -1,11 +1,9 @@
 import mmap
 import struct
 import time
-from datetime import timedelta
 from types import TracebackType
 
 import numpy as np
-from shepherd_core.data_models.experiment import PowerTracing
 from typing_extensions import Self
 
 from . import commons
@@ -25,12 +23,17 @@ class SharedMemIVOutput:
 
     N_BUFFER_CHUNKS: int = 30
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS  # 20k samples = 320 kiB
-    DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
+    DURATION_CHUNK_MS: int = (N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS) // 10**6
+    DURATION_CHUNK_S: float = commons.BUFFER_IV_OUT_INTERVAL_S / N_BUFFER_CHUNKS
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_OUT_INTERVAL_S
 
-    def __init__(self, mem_map: mmap, cfg: PowerTracing | None, ts_xp_start_ns: int) -> None:
+    OPTIMIZE_TIMESTAMPS: bool = True
+    ST_U32 = struct.Struct("=L")
+    ST_U64 = struct.Struct("=Q")
+
+    def __init__(self, mem_map: mmap, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
         self.size_by_sys: int = sysfs.get_trace_iv_out_size()
         self.address: int = sysfs.get_trace_iv_out_address()
@@ -55,9 +58,6 @@ class SharedMemIVOutput:
             )
             raise ValueError(msg)
 
-        self.ts_start: int | None = None
-        self.ts_stop: int | None = None
-
         self.index_next: int = 0
 
         self._offset_base: int = self.address - self.base
@@ -81,37 +81,21 @@ class SharedMemIVOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self._generate_chunk_views()
+
         self.fill_level: float = 0
         self.fill_last: float = 0
 
         self.xp_start: float = ts_xp_start_ns * 1e-9
 
-        self.ts_start: int | None = None
-        self.ts_stop: int | None = None
-        self.ts_set: bool = False
-
-        if cfg is not None:
-            self.ts_set = True
-            self.ts_start = ts_xp_start_ns + self.timedelta_to_ns(cfg.delay)
-            self.ts_stop = self.ts_start + self.timedelta_to_ns(cfg.duration, default_s=10**6)
-            # ⤷ duration defaults to ~ 100 days (10**6 seconds)
-            log.debug(
-                "[%s] Tracer time-boundaries set to [%.2f, %.2f] => %.0f s",
-                type(self).__name__,
-                self.ts_start / 1e9,
-                self.ts_stop / 1e9,
-                (self.ts_stop - self.ts_start) / 1e9,
-            )
-        else:
-            log.debug("[%s] Tracer deactivated", type(self).__name__)
-
         self.timestamp_last: int = 0
 
     def __enter__(self) -> Self:
+        """Clear section and set Canary."""
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
-        self._mm.write(struct.pack("=L", commons.CANARY_VALUE_U32))
+        self._mm.write(self.ST_U32.pack(commons.CANARY_VALUE_U32))
 
     def __exit__(
         self,
@@ -122,9 +106,35 @@ class SharedMemIVOutput:
     ) -> None:
         self.check_canary()
 
+    def _generate_chunk_views(self) -> None:
+        self.chunks: list[IVTrace] = []
+        for _iter in range(self.N_BUFFER_CHUNKS):
+            _index = _iter * self.N_SAMPLES_PER_CHUNK
+            chunk = IVTrace(
+                voltage=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_voltages + _index * 4,
+                ),
+                current=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_currents + _index * 4,
+                ),
+                timestamp_ns=np.frombuffer(
+                    self._mm,
+                    np.uint64,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_timestamps + _index * 8,
+                ),
+            )
+            self.chunks.append(chunk)
+
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
-        canary: int = struct.unpack("=L", self._mm.read(4))[0]
+        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
@@ -132,17 +142,11 @@ class SharedMemIVOutput:
             )
             raise BufferError(msg)
 
-    @staticmethod
-    def timedelta_to_ns(delta: timedelta | None, default_s: int = 0) -> int:
-        if isinstance(delta, timedelta):
-            return int(delta.total_seconds() * 10**9)
-        return int(timedelta(seconds=default_s).total_seconds() * 10**9)
-
     def get_size_available(self) -> int:
         # determine current state
         # TODO: add mode to wait blocking?
         self._mm.seek(self._offset_idx_pru)
-        index_pru = struct.unpack("=L", self._mm.read(4))[0]
+        index_pru = self.ST_U32.unpack(self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
@@ -151,15 +155,19 @@ class SharedMemIVOutput:
         self.fill_last = self.fill_level
         return avail_length
 
-    def read(self, *, verbose: bool = False) -> IVTrace | None:
-        """Extracts trace from PRU-shared buffer in RAM.
+    def request_chunk(self, *, verbose: bool = False) -> IVTrace | None:
+        """Extracts chunk-view of trace from PRU-shared buffer in RAM.
 
         :param verbose: chatter-prevention, performance-critical computation saver
+
+        Benchmarks:
+        - old read with generating views takes 0.21 ms
+        - generating all buffered views takes 2.3 - 5 ms
+        - new read/request_chunk with precompiled views takes 0.11 ms
 
         Returns: IVTrace if available
         """
         avail_length = self.get_size_available()
-
         if avail_length < self.N_SAMPLES_PER_CHUNK:
             return None  # nothing to do
 
@@ -169,17 +177,13 @@ class SharedMemIVOutput:
                 type(self).__name__,
             )
 
-        timestamps_ns = np.frombuffer(
-            self._mm,
-            np.uint64,
-            count=self.N_SAMPLES_PER_CHUNK,
-            offset=self._offset_timestamps + self.index_next * 8,
-        )
-        pru_timestamp = int(timestamps_ns[0])
+        chunk_data = self.chunks[self.index_next // self.N_SAMPLES_PER_CHUNK]
+        chunk_ts_start = int(chunk_data.ds_time[0])
+        chunk_ts_end = int(chunk_data.ds_time[-1])
 
         if self.timestamp_last > 0:
-            diff_ms = (pru_timestamp - self.timestamp_last) // 10**6
-            if pru_timestamp == 0:
+            diff_ms = (chunk_ts_start - self.timestamp_last) // 10**6
+            if chunk_ts_start == 0:
                 log.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 log.error(
@@ -196,44 +200,28 @@ class SharedMemIVOutput:
                     "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
-        self.timestamp_last = pru_timestamp
+        self.timestamp_last = chunk_ts_start
 
         # prepare & fetch data
-        if not self.ts_set:  # recording not wanted
-            data = None
-        elif (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start):
-            data = IVTrace(
-                voltage=np.frombuffer(
-                    self._mm,
-                    np.uint32,
-                    count=self.N_SAMPLES_PER_CHUNK,
-                    offset=self._offset_voltages + self.index_next * 4,
-                ),
-                current=np.frombuffer(
-                    self._mm,
-                    np.uint32,
-                    count=self.N_SAMPLES_PER_CHUNK,
-                    offset=self._offset_currents + self.index_next * 4,
-                ),
-                timestamp_ns=timestamps_ns,
-            )
-        else:
-            data = None
+        if chunk_ts_end < self.xp_start:
+            # TODO: should not be possible with current pru-fw
+            chunk_data = None
             log.debug(
-                "[%s] Discarded data - out of time-boundary (t_pru = %d).",
+                "[%s] Discarded data - TS before start of experiment (t_pru = %d).",
                 type(self).__name__,
-                pru_timestamp,
+                chunk_ts_start,
             )
 
         if verbose:
             log.debug(
-                "[%s] Retrieving index=%6d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
+                "[%s] Retrieving index=%d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill, data=%s",
                 type(self).__name__,
                 self.index_next,
                 self.N_SAMPLES_PER_CHUNK,
-                pru_timestamp * 1e-9 - self.xp_start,
+                chunk_ts_start * 1e-9 - self.xp_start,
                 time.time() - self.xp_start,
                 100 * self.fill_level,
+                type(chunk_data).__name__,
             )
 
         # TODO: segment in buffer should be reset to ZERO to better detect errors
@@ -242,4 +230,4 @@ class SharedMemIVOutput:
         if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()
 
-        return data
+        return chunk_data

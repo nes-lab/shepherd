@@ -178,7 +178,7 @@ def ram_to_file_new(path: Path, mem: SharedMemory, compression: Compression) -> 
             m_end = 2 * Writer.CHUNK_SAMPLES_N * (_iter + 1)
             f_start = Writer.CHUNK_SAMPLES_N * _iter
             f_end = Writer.CHUNK_SAMPLES_N * (_iter + 1)
-            if f_end > sw.ds_voltage.size:
+            if f_end > sw.ds_voltage.shape[0]:
                 sw.ds_voltage.resize((f_end,))
                 sw.ds_current.resize((f_end,))
             sw.ds_voltage.write_direct(
@@ -218,7 +218,7 @@ def ram_to_file_new_ts(path: Path, mem: SharedMemory, compression: Compression) 
             m_end = 2 * Writer.CHUNK_SAMPLES_N * (_iter + 1)
             f_start = Writer.CHUNK_SAMPLES_N * _iter
             f_end = Writer.CHUNK_SAMPLES_N * (_iter + 1)
-            if f_end > sw.ds_voltage.size:
+            if f_end > sw.ds_voltage.shape[0]:
                 sw.ds_time.resize((f_end,))
                 sw.ds_voltage.resize((f_end,))
                 sw.ds_current.resize((f_end,))

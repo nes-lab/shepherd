@@ -6,14 +6,17 @@ HDF5 files.
 
 """
 
+from datetime import timedelta
 from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
 
+from shepherd_core.data_models.experiment import PowerTracing
 from typing_extensions import Self
 
 from . import commons
 from .h5_monitor_ntp import NTPMonitor
+from .h5_recorder_iv import IVRecorder
 from .h5_recorder_power import PowerRecorder
 
 if TYPE_CHECKING:
@@ -21,7 +24,6 @@ if TYPE_CHECKING:
 
     from .h5_monitor_abc import Monitor
 
-import numpy as np
 from shepherd_core.data_models.base.calibration import CalibrationEmulator as CalEmu
 from shepherd_core.data_models.base.calibration import CalibrationHarvester as CalHrv
 from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
@@ -43,12 +45,14 @@ from .h5_recorder_pru import PruRecorder
 from .logger import log
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_iv_input import IVTrace
-from .shared_mem_iv_output import SharedMemIVOutput
 from .shared_mem_util_output import UtilTrace
 
 
 class Writer(CoreWriter):
     """Stores data coming from PRU's in HDF5 format
+
+    NOTE: this is optimized for live measurements.
+    Individual recorders/monitors are rate limited and queued to unblock write-commands.
 
     Args:
         file_path (Path): Name of the HDF5 file that data will be written to
@@ -69,28 +73,39 @@ class Writer(CoreWriter):
         window_samples: int | None = None,
         cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
-        sample_rate: int | None = None,
+        cfg_pwr: PowerTracing | None = None,
         *,
         modify_existing: bool = False,
         force_overwrite: bool = False,
-        only_power: bool = False,
         verbose: bool | None = True,
     ) -> None:
         # hopefully overwrite defaults from Reader
         self.samplerate_sps: int = 10**9 // commons.SAMPLE_INTERVAL_NS
         self.reduce: bool = False
         self.reduction_factor: int = 1
-        if isinstance(sample_rate, int):
-            if sample_rate not in self.RATES_SUPPORTED:
+        self.iv_discard: bool = False
+        if cfg_pwr is not None:
+            if cfg_pwr.samplerate not in self.RATES_SUPPORTED:
                 raise ValueError(
                     "Data-rate for Power must be in [Hz, Samples-per-second]: %s",
                     self.RATES_SUPPORTED,
                 )
-            self.reduce: bool = sample_rate != self.samplerate_sps
-            self.reduction_factor: int = self.samplerate_sps // sample_rate
-            self.samplerate_sps = sample_rate
-        if self.reduce:
-            log.info("Activated custom sample-rate: %d", self.samplerate_sps)
+            self.reduce: bool = cfg_pwr.samplerate != self.samplerate_sps
+            self.reduction_factor: int = self.samplerate_sps // cfg_pwr.samplerate
+            self.samplerate_sps = cfg_pwr.samplerate
+            if self.reduce:
+                log.info("Activated custom sample-rate: %d", self.samplerate_sps)
+        else:
+            self.iv_discard = True
+            log.info("IVRecorder is disabled!")
+
+        self.cfg_pwr = cfg_pwr
+        self.only_power = cfg_pwr.only_power if cfg_pwr is not None else False
+
+        # config for timestamp-limiting (previous tracers in shared mem)
+        self.iv_ts_limited: bool = False
+        self.iv_ts_start: int | None = None
+        self.iv_ts_stop: int | None = None
 
         # TODO: derive verbose-state
         super().__init__(
@@ -100,30 +115,14 @@ class Writer(CoreWriter):
             window_samples,
             cal_data,
             compression,
+            big_chunks=False,
             modify_existing=modify_existing,
             force_overwrite=force_overwrite,
+            h5_perf=True,
             verbose=verbose,
-        )
-        self.only_power = only_power
-
-        self.buffer_timeseries = (
-            self.reduction_factor
-            * commons.SAMPLE_INTERVAL_NS
-            * np.arange(
-                SharedMemIVOutput.N_SAMPLES_PER_CHUNK // self.reduction_factor,
-            ).astype(np.uint64)
         )
 
         self.grp_data: h5py.Group = self.h5file["data"]
-
-        # Optimization: allowing larger more efficient resizes
-        #               (before .resize() was called per element)
-        # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
-        # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
-        self.data_pos = 0
-        self.data_inc = int(100 * self.samplerate_sps)
-        # NOTE for possible optimization: align resize with chunk-size
-        #      -> rely on autochunking -> inc = h5ds.chunks
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
@@ -146,17 +145,20 @@ class Writer(CoreWriter):
         # Create group for additional recorders
         self.gpio_grp = self.h5file.create_group("gpio")
         self.pru_util_grp = self.h5file.create_group("pru_util")
+
         # prepare recorders
         self.rec_gpio = GpioRecorder(self.gpio_grp, compression=self._compression)
         self.rec_pru = PruRecorder(self.pru_util_grp, compression=self._compression)
         if self.only_power:
             self.power_grp = self.h5file.create_group("power")
-            self.rec_power = PowerRecorder(
-                data_rate=self.samplerate_sps,
-                cal_data=self._cal,
+            self.rec_iv = PowerRecorder(
                 target=self.power_grp,
+                cal_data=self._cal,
                 compression=self._compression,
+                reduction_factor=self.reduction_factor,
             )
+        else:
+            self.rec_iv = IVRecorder(self.grp_data, self.reduction_factor)
 
         # targets for logging-monitor # TODO: redesign? all should be kept in data_0
         self.sheep_grp = self.h5file.create_group("sheep")
@@ -177,16 +179,10 @@ class Writer(CoreWriter):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        # trim over-provisioned parts
-        self.grp_data["time"].resize((self.data_pos,))
-        self.grp_data["voltage"].resize((self.data_pos,))
-        self.grp_data["current"].resize((self.data_pos,))
-
         # end recorders
-        self.rec_gpio.__exit__()
         self.rec_pru.__exit__()
-        if hasattr(self, "rec_power"):
-            self.rec_power.__exit__()
+        self.rec_gpio.__exit__()
+        self.rec_iv.__exit__()  # can be power or iv
 
         # end monitors
         for monitor in self.monitors:
@@ -194,71 +190,63 @@ class Writer(CoreWriter):
         log.info("Wrote result to: %s", self.file_path.as_posix())
         super().__exit__()
 
+    @staticmethod
+    def timedelta_to_ns(delta: timedelta | None, default_s: int = 0) -> int:
+        if isinstance(delta, timedelta):
+            return int(delta.total_seconds() * 10**9)
+        return int(timedelta(seconds=default_s).total_seconds() * 10**9)
+
+    def activate_iv_time_limits(self, ts_xp_start_ns: int) -> None:
+        if self.cfg_pwr is None:
+            return
+
+        self.iv_ts_start = ts_xp_start_ns + self.timedelta_to_ns(self.cfg_pwr.delay)
+        self.iv_ts_stop = self.iv_ts_start + self.timedelta_to_ns(
+            self.cfg_pwr.duration, default_s=10**6
+        )
+        # ⤷ duration defaults to ~ 100 days (10**6 seconds)
+        self.iv_ts_limited = True
+        log.debug(
+            "[%s] Time-boundaries set to [%.2f, %.2f] => %.0f s",
+            type(self).__name__,
+            self.iv_ts_start / 1e9,
+            self.iv_ts_stop / 1e9,
+            (self.iv_ts_stop - self.iv_ts_start) / 1e9,
+        )
+
     def write_iv_buffer(self, data: IVTrace) -> None:
-        """Writes data from buffer to file.
+        """Writes data from buffer to file-write-queue.
+
+        Note: storage is queued to unblock write-commands, also rate-limited to even load.
 
         Args:
             data: buffer-segment containing IV data
         """
-        # First, we have to resize the corresponding datasets
-        if self.only_power:
-            self.rec_power.write(data)
+        if self.iv_discard:
             return
-
-        len_add = len(data)
-        if len_add < self.reduction_factor:  # is 1 when not used
-            return
-        if len_add % self.reduction_factor != 0:
-            log.warning("Power-Tracer Input got odd size - some samples will be discarded")
-        len_red = len(data) // self.reduction_factor
-        len_add = len_red * self.reduction_factor
-
-        # timestamps are automatically reduced
-        if isinstance(data.timestamp_ns, int):
-            data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
-        elif isinstance(data.timestamp_ns, np.ndarray):
-            # benchmarked slices: [:] is as fast as [::1] on BBB
-            data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
-        else:
-            raise TypeError("timestamp_ns must be int or np.ndarray")
-
-        if self.reduce:  # aka resampling via binning
-            # Note: input is u18, max reduction is 10k (u14), so u32 should be fine
-            data.voltage = (
-                data.voltage[:len_add]
-                .reshape(len_red, self.reduction_factor)
-                .mean(axis=1, dtype=np.uint64)
-                .clip(0, 2**32)
-                .astype(np.uint32)
-            )
-            data.current = (
-                data.current[:len_add]
-                .reshape(len_red, self.reduction_factor)
-                .mean(axis=1, dtype=np.uint64)
-                .clip(0, 2**32)
-                .astype(np.uint32)
-            )
-            len_add = len_red
-
-        # add to file
-        data_end_pos = self.data_pos + len_add
-        data_length_h5 = self.grp_data["voltage"].shape[0]
-        if data_end_pos >= data_length_h5:
-            data_length_h5 += self.data_inc
-            self.grp_data["voltage"].resize((data_length_h5,))
-            self.grp_data["current"].resize((data_length_h5,))
-            self.grp_data["time"].resize((data_length_h5,))
-
-        self.grp_data["voltage"][self.data_pos : data_end_pos] = data.voltage
-        self.grp_data["current"][self.data_pos : data_end_pos] = data.current
-        self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
-        self.data_pos = data_end_pos
+        if self.iv_ts_limited:
+            ts_chunk = data.timestamp_ns()
+            if (ts_chunk > self.iv_ts_stop) or (ts_chunk < self.iv_ts_start):
+                log.debug(
+                    "[%s] Discarded data - out of time-boundary (t_pru = %d).",
+                    type(self).__name__,
+                    ts_chunk,
+                )
+                return
+        self.rec_iv.write(data)  # dynamically power- or iv-recorder
 
     def write_gpio_buffer(self, data: GPIOTrace) -> None:
+        # Note: storage is queued to unblock write-commands, also rate-limited to even load.
         self.rec_gpio.write(data)
 
     def write_util_buffer(self, data: UtilTrace) -> None:
+        # Note: storage is queued to unblock write-commands, also rate-limited to even load.
         self.rec_pru.write(data)
+
+    def flush_queues(self) -> None:
+        self.rec_pru.flush_queue()
+        self.rec_gpio.flush_queue()
+        self.rec_iv.flush_queue()
 
     def start_monitors(
         self,
@@ -279,7 +267,7 @@ class Writer(CoreWriter):
             self.monitors.append(
                 UARTMonitor(
                     self.uart_grp,
-                    self._compression,
+                    compression=self._compression,
                     config=uart,
                 ),
             )
@@ -294,3 +282,11 @@ class Writer(CoreWriter):
         for monitor in self.monitors:
             if hasattr(monitor, "check_status"):
                 monitor.check_status()
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        for monitor in self.monitors:
+            monitor.preshape_by_runtime(value_s)
+        self.rec_pru.preshape_by_runtime(value_s)
+        self.rec_gpio.preshape_by_runtime(value_s)
+        self.rec_iv.preshape_by_runtime(value_s)

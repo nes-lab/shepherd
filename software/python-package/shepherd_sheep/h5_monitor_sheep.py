@@ -20,17 +20,17 @@ class SheepMonitor(Monitor):
         self.queue = get_message_queue()
         self.data.create_dataset(
             name="message",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.chunk_size,),
         )
         self.data.create_dataset(
             name="level",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype="uint8",
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.chunk_size,),
         )
         self.data["level"].attrs["unit"] = "n"
         self.data["level"].attrs["description"] = (
@@ -52,27 +52,22 @@ class SheepMonitor(Monitor):
         extra_arg: int = 0,
     ) -> None:
         time.sleep(2 * self.poll_interval)  # give thread time to write last bits
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=5 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
+        self.shutdown_thread()
         self.data["message"].resize((self.position,))
         self.data["level"].resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
         while not self.event.is_set():
-            if self.queue.qsize() > 0:
+            if self.queue.empty():
+                self.event.wait(self.poll_interval)  # rate limiter
+            else:
+                self.event.wait(self.rate_limit_interval)
                 rec = self.queue.get()
                 try:
-                    data_length = self.data["time"].shape[0]
+                    data_length = len(self.data["time"])  # a faster .shape[0]
                     if self.position >= data_length:
-                        data_length += self.increment
+                        data_length += self.increment_size
                         self.data["time"].resize((data_length,))
                         self.data["message"].resize((data_length,))
                         self.data["level"].resize((data_length,))
@@ -86,6 +81,12 @@ class SheepMonitor(Monitor):
                 self.data["message"][self.position] = rec.message
                 self.data["level"][self.position] = rec.levelno
                 self.position += 1
-            else:
-                self.event.wait(self.poll_interval)  # rate limiter
+
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        # leave as is

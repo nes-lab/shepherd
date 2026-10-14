@@ -57,6 +57,25 @@ ip a
 # ⤷ determine current IP
 ```
 
+## Beaglebone Green Eco
+
+The new Eco-Version comes with an old bootloader that makes booting from SD-Card harder.
+In addition, newer debian-images need to change the password on boot.
+
+Recipe for new boards:
+
+```shell
+# change PW - if not already during ssh-login
+sudo passwd debian
+# update bootloader
+sudo apt update
+sudo apt dist-upgrade --yes
+sudo /opt/u-boot/bb-u-boot-am335x-evm/install.sh
+# determine MAC - as it is not printed on the case anymore
+ip address
+```
+
+
 ## Distribution to other nodes
 
 - burn image to other SD-cards

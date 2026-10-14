@@ -46,9 +46,13 @@ class SharedMemGPIOOutput:
 
     N_SAMPLES_PER_CHUNK: int = 50_000  # ~ 500 kiB Chunk
     N_BUFFER_CHUNKS: int = N_SAMPLES // N_SAMPLES_PER_CHUNK
+    DURATION_CHUNK_S: float = N_SAMPLES_PER_CHUNK / 1e6  # ~ 1 MSPS
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_GPIO_INTERVAL_S
+
+    ST_U32 = struct.Struct("=L")
+    ST_U64 = struct.Struct("=Q")
 
     def __init__(self, mem_map: mmap, cfg: GpioTracing | None, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
@@ -91,6 +95,8 @@ class SharedMemGPIOOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self._generate_chunk_views()
+
         self.fill_level: float = 0
         self.fill_last: float = 0
 
@@ -115,27 +121,27 @@ class SharedMemGPIOOutput:
         else:
             log.debug("[%s] Tracer deactivated", type(self).__name__)
 
-        # gpio masking, configured for cape v2.4
-
-        mask_gpio = 0
+        # gpio masking, dynamically configured for cape (v2.4 or v2.5)
         if cfg is not None:
+            mask_gpio = 0
             for gpio in cfg.gpios:
                 pin_num = target_port_to_cape_mapping.get(gpio)
                 if pin_num is not None:
                     mask_gpio |= 2**pin_num
-        sysfs.wait_for_state("idle", 4)
-        sysfs.write_gpio_tracer_mask(mask_gpio)
-        log.debug(
-            "[%s] Tracer GPIO mask = %s (max is 0x03FF for cape v2.4, 0x3FFF for v2.5)",
-            type(self).__name__,
-            f"0x{mask_gpio:X}",
-        )  # TODO: add unittest!
+            sysfs.wait_for_state("idle", 4)
+            sysfs.write_gpio_tracer_mask(mask_gpio)
+            log.debug(
+                "[%s] Tracer GPIO mask = %s (max is 0x03FF for cape v2.4, 0x3FFF for v2.5)",
+                type(self).__name__,
+                f"0x{mask_gpio:X}",
+            )  # TODO: add unittest!
 
     def __enter__(self) -> Self:
+        """Clear section and set Canary."""
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
-        self._mm.write(struct.pack("=L", commons.CANARY_VALUE_U32))
+        self._mm.write(self.ST_U32.pack(commons.CANARY_VALUE_U32))
 
     def __exit__(
         self,
@@ -146,9 +152,29 @@ class SharedMemGPIOOutput:
     ) -> None:
         self.check_canary()
 
+    def _generate_chunk_views(self) -> None:
+        self.chunks: list[GPIOTrace] = []
+        for _iter in range(self.N_BUFFER_CHUNKS):
+            _index = _iter * self.N_SAMPLES_PER_CHUNK
+            chunk = GPIOTrace(
+                timestamps_ns=np.frombuffer(
+                    self._mm,
+                    np.uint64,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_timestamps + _index * 8,
+                ),
+                bitmasks=np.frombuffer(
+                    self._mm,
+                    np.uint16,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_bitmasks + _index * 2,
+                ),
+            )
+            self.chunks.append(chunk)
+
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
-        canary: int = struct.unpack("=L", self._mm.read(4))[0]
+        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
@@ -165,7 +191,7 @@ class SharedMemGPIOOutput:
     def get_size_available(self) -> int:
         # determine current fill-level
         self._mm.seek(self._offset_idx_pru)
-        index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
+        index_pru: int = self.ST_U32.unpack(self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
@@ -174,14 +200,18 @@ class SharedMemGPIOOutput:
         self.fill_last = self.fill_level
         return avail_length
 
-    def read(
+    def request_chunk(
         self, *, force: bool = False, discard: bool = False, verbose: bool = False
     ) -> GPIOTrace | None:
+        """Extracts chunk-view of trace from PRU-shared buffer in RAM."""
+
         avail_length = self.get_size_available()
         if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
+        # TODO: align code with others mem-classes -
+        #       put subchunking in another FN to get only precompiled views
 
         if discard or self.fill_level > 0.8:
             # show an error here, as we will now drop samples
@@ -193,15 +223,6 @@ class SharedMemGPIOOutput:
             self.index_next = (self.index_next + read_length) % self.N_SAMPLES
             return None
 
-        if verbose:
-            log.debug(
-                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, %.2f %%fill",
-                type(self).__name__,
-                self.index_next,
-                read_length,
-                time.time(),
-                100 * self.fill_level,
-            )
         # prepare & fetch data
         timestamps = np.frombuffer(
             self._mm,
@@ -228,6 +249,18 @@ class SharedMemGPIOOutput:
                 "[%s] Discarded data - out of time-boundary",
                 type(self).__name__,
             )
+
+        if verbose:
+            log.debug(
+                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, %.2f %%fill, data=%s",
+                type(self).__name__,
+                self.index_next,
+                read_length,
+                time.time(),
+                100 * self.fill_level,
+                type(data).__name__,
+            )
+
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
 

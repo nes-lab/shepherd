@@ -3,6 +3,6 @@
 
 #include "stdint_fast.h"
 
-inline bool power_good_update(void);
+bool power_good_update(void);
 
 #endif //POWER_GOOD_H_

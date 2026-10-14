@@ -16,7 +16,6 @@ from shepherd_core.data_models.content.virtual_harvester_config_pru import Harve
 from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.experiment import GpioTracing
-from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.reader import Reader
 from typing_extensions import Self
@@ -98,7 +97,6 @@ class ShepherdIO:
     def __init__(
         self,
         mode: str,
-        trace_iv: PowerTracing | None,
         trace_gpio: GpioTracing | None,
     ) -> None:
         """Initializes relevant variables.
@@ -124,7 +122,6 @@ class ShepherdIO:
             self.component = "emulator"
         self.gpios = {}
 
-        self.trace_iv = trace_iv
         self.trace_gpio = trace_gpio
 
         # placeholders
@@ -204,23 +201,21 @@ class ShepherdIO:
                 before raising timeout exception
 
         """
-        # TODO: cleanest way without exception: ask sysfs-file with current msg-count
         for _ in range(timeout_n):
-            try:
-                return sysfs.read_pru_msg()
-            except sysfs.SysfsInterfaceError:  # noqa: PERF203
+            msg = sysfs.read_pru_msg()
+            if msg is None:
                 time.sleep(self.segment_period_s)
                 continue
+            return msg
         raise ShepherdTimeoutError
 
     @staticmethod
     def _flush_msgs() -> None:
         """Flushes msg_channel by reading all available bytes."""
-        try:
-            while True:
-                sysfs.read_pru_msg()
-        except sysfs.SysfsInterfaceError:
-            pass
+        while True:
+            msg = sysfs.read_pru_msg()
+            if msg is None:
+                return
 
     def start(
         self,
@@ -271,7 +266,6 @@ class ShepherdIO:
         start_time = self.start_time if hasattr(self, "start_time") else time.time()
 
         self.shared_mem = SharedMemory(
-            self.trace_iv,
             self.trace_gpio,
             start_timestamp_ns=int(1e9 * start_time),
             n_samples_per_segment=self.samples_per_segment,
@@ -543,11 +537,11 @@ class ShepherdIO:
             ShepherdPRUError: If unrecoverable error was detected
         """
         while True:
-            try:
-                msg_type, values = sysfs.read_pru_msg()
-            except sysfs.SysfsInterfaceError:
+            msg = sysfs.read_pru_msg()
+            if msg is None:
                 return
 
+            msg_type, values = msg
             if msg_type == commons.MSG_DBG_PRINT:
                 log.info("Received cmd to print: %d, %d", values[0], values[1])
                 continue

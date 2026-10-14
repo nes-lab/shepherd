@@ -5,7 +5,6 @@ from contextlib import ExitStack
 from types import TracebackType
 
 from shepherd_core.data_models.experiment import GpioTracing
-from shepherd_core.data_models.experiment import PowerTracing
 from typing_extensions import Self
 
 from . import sysfs_interface as sysfs
@@ -32,7 +31,6 @@ class SharedMemory:
 
     def __init__(
         self,
-        cfg_iv: PowerTracing | None,
         cfg_gpio: GpioTracing | None,
         start_timestamp_ns: int,
         n_samples_per_segment: int | None = None,
@@ -78,7 +76,7 @@ class SharedMemory:
         # TODO: could it also be async? might be error-source
 
         self.iv_inp = SharedMemIVInput(self._mm, n_samples_per_segment)
-        self.iv_out = SharedMemIVOutput(self._mm, cfg_iv, start_timestamp_ns)
+        self.iv_out = SharedMemIVOutput(self._mm, start_timestamp_ns)
         self.gpio = SharedMemGPIOOutput(self._mm, cfg_gpio, start_timestamp_ns)
         self.util = SharedMemUtilOutput(self._mm)
         self._stack = ExitStack()
@@ -139,4 +137,4 @@ class SharedMemory:
             or (util and self.util.fill_level > 0.80)
         ):
             # warning will be generated in read()-fn
-            self.gpio.read(discard=True)
+            self.gpio.request_chunk(discard=True)

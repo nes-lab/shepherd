@@ -4,8 +4,6 @@
 - name: Install Shepherd-Software - Role-based
   hosts: sheep
   become: true
-  strategy: free  # noqa: run-once[play]
-  # ⤷ ansible won't wait for every host to continue next task
 
   pre_tasks:
 
@@ -32,21 +30,18 @@
 - name: Role - PTP-Client
   hosts: ptp_clients
   become: true
-  strategy: free # noqa: run-once[play]
   roles:
     - ptp_client
 
 - name: Role - NTP-Client
   hosts: ntp_clients
   become: true
-  strategy: free # noqa: run-once[play]
   roles:
     - ntp_client
 
 - name: Role - GPS-Client
   hosts: gps_clients
   become: true
-  strategy: free # noqa: run-once[play]
   roles:
     - gps_client
 # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
@@ -56,14 +51,12 @@
 - name: Role - PTP-Server
   hosts: ptp_servers
   become: true
-  strategy: free # noqa: run-once[play]
   roles:
     - ptp_server
 
 - name: Role - Secured Testbed
   hosts: secured
   become: true
-  strategy: free # noqa: run-once[play]
   roles:
     - secure_testbed
 
@@ -79,7 +72,6 @@
 - name: Installation done! Now post-installation tasks
   hosts: sheep
   become: true
-  strategy: free # noqa: run-once[play]
 
   # post_tasks:
   tasks:

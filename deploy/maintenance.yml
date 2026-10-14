@@ -2,9 +2,8 @@
 # will handle updates, some configuration, remove clutter, improve ram-usage and boot-duration
 
 - name: Update software & cleanup
-  hosts: all
+  hosts: sheep
   become: true
-  strategy: free # noqa: run-once[play]
 
   tasks:
 

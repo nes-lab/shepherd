@@ -16,26 +16,25 @@ class UARTMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
+        config: UartLogging,
         compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
-        config: UartLogging | None = None,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.05)
         self.uart = uart
         self.config = config
         self.data.create_dataset(
             name="message",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.chunk_size,),
             compression=compression,
         )
         self.data["message"].attrs["description"] = "raw ascii-bytes"
 
-        if config is None:
+        if not isinstance(self.config, UartLogging):
             return
-
         if (not isinstance(self.config.baudrate, int)) or (self.config.baudrate == 0):
             return
 
@@ -69,15 +68,7 @@ class UARTMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=4 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
+        self.shutdown_thread()
         self.data["message"].resize((self.position,))
         super().__exit__()
 
@@ -98,14 +89,14 @@ class UARTMonitor(Monitor):
                 parity=self.config.parity,
                 timeout=0,
             ) as uart:
-                while not self.event.wait(self.poll_interval):  # rate limiter & exit
+                while not self.event.is_set():
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
                         if len(output) > 0:
-                            data_length = self.data["time"].shape[0]
+                            data_length = len(self.data["time"])  # a faster .shape[0]
                             if self.position >= data_length:
-                                data_length += self.increment
+                                data_length += self.increment_size
                                 self.data["time"].resize((data_length,))
                                 self.data["message"].resize((data_length,))
                             self.data["time"][self.position] = int(
@@ -113,6 +104,8 @@ class UARTMonitor(Monitor):
                             )
                             self.data["message"][self.position] = output
                             self.position += 1
+                    else:
+                        self.event.wait(self.poll_interval)
 
         except RuntimeError:
             log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
@@ -124,7 +117,7 @@ class UARTMonitor(Monitor):
                 type(self).__name__,
                 e,
                 self.uart,
-                self.baudrate,
+                self.config.baudrate,
             )
         except serial.SerialException as e:
             log.error(
@@ -135,3 +128,10 @@ class UARTMonitor(Monitor):
                 self.uart,
             )
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        # leave as is

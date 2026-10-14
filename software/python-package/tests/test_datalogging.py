@@ -5,13 +5,16 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.base.calibration import CalibrationSeries
 from shepherd_core.reader import Reader as CoreReader
+from shepherd_core.writer import Writer as CoreWriter
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.h5_writer import Writer
 from shepherd_sheep.shared_mem_iv_input import IVTrace
+from shepherd_sheep.shared_mem_iv_output import SharedMemIVOutput
 
 
 def random_data(length: int) -> np.ndarray:
@@ -21,7 +24,7 @@ def random_data(length: int) -> np.ndarray:
 
 @pytest.fixture
 def data_buffer() -> IVTrace:
-    len_ = 10_000
+    len_ = SharedMemIVOutput.N_SAMPLES_PER_CHUNK
     voltage = random_data(len_)
     current = random_data(len_)
     return IVTrace(voltage, current, 1551848387472)
@@ -30,16 +33,15 @@ def data_buffer() -> IVTrace:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "hrv_example.h5"
-    with Writer(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
+    with CoreWriter(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
         store.store_hostname("Pinky")
+        len_ = 10_000
         for i in range(100):
-            len_ = 10_000
-            mock_data = IVTrace(
+            store.append_iv_data_raw(
+                timestamp=i * len_ * SAMPLE_INTERVAL_NS,
                 voltage=random_data(len_),
                 current=random_data(len_),
-                timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
             )
-            store.write_iv_buffer(mock_data)
     return name
 
 
@@ -87,16 +89,24 @@ def test_h5writer_data(
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest.h5"
-    with Writer(file_path=d, cal_data=cal_cape.harvester, mode=mode) as log:
+    with Writer(
+        file_path=d,
+        cal_data=cal_cape.harvester,
+        mode=mode,
+        cfg_pwr=PowerTracing(),
+    ) as log:
         log.write_iv_buffer(data_buffer)
+        log.flush_queues()
 
     with h5py.File(d, "r") as written:
         assert "data" in written
+
         assert "time" in written["data"]
-        for variable in ["voltage", "current"]:
-            assert variable in written["data"]  # .keys()
-            ref_var = getattr(data_buffer, variable)
-            assert all(written["data"][variable][:] == ref_var)
+        assert "voltage" in written["data"]
+        assert "current" in written["data"]
+
+        assert all(written["data"]["voltage"][:] == data_buffer.ds_voltage)
+        assert all(written["data"]["current"][:] == data_buffer.ds_current)
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
@@ -106,7 +116,7 @@ def test_calibration_logging(
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "recording.h5"
-    with Writer(file_path=d, mode=mode, cal_data=cal_cape.harvester) as _:
+    with Writer(file_path=d, mode=mode, cal_data=cal_cape.harvester, cfg_pwr=PowerTracing()) as _:
         pass
 
     h5store = h5py.File(d, "r")
@@ -144,8 +154,10 @@ def test_h5writer_performance(
         file_path=d,
         force_overwrite=True,
         cal_data=cal_cape.harvester,
+        cfg_pwr=PowerTracing(),
     ) as log:
         log.write_iv_buffer(data_buffer)
+        log.flush_queues()
 
 
 def test_reader_performance(data_h5: Path) -> None:

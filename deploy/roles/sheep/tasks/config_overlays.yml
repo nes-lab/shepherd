@@ -27,6 +27,11 @@
       regexpress: "#?enable_uboot_cape_universal=.*$",
       replacement: "enable_uboot_cape_universal=0",
     }
+  # New BBG Eco & Kernel 6.18 boot with:
+  #   enable_uboot_overlays=1
+  #	  enable_uboot_cape_universal=0
+  #	  uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo
+  #	  uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo
   become: true
   tags: device-tree
 

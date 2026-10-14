@@ -9,7 +9,7 @@ authors = [
 ]
 maintainers = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
 
-version = "2026.08.1"
+version = "2026.10.1"
 
 license = "MIT"
 
@@ -43,7 +43,7 @@ dependencies = [
     "msgpack-numpy",
     "gevent",
     "chromalog",
-    "pydantic>2.11.0",  # this release gives a speedbump
+    "pydantic>=2.14.0",  # this release gives a speedbump
     "greenlet",  # added here to allow sourcing from custom uv-index
     "zstandard",  # added here to allow sourcing from custom uv-index
     "pyzmq",  # added here to allow sourcing from custom uv-index

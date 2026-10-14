@@ -3,11 +3,9 @@
 - name: Migrate to newer kernel
   hosts: sheep
   become: true
-  # strategy: free  # noqa: run-once[play]
-  # ⤷ ansible won't wait for every host to continue next task
   vars:
     new_kernel_version: "6.18.53-bone55"
-    update_pssp: false
+    update_pssp: true
 
   pre_tasks: # update time
 
@@ -95,7 +93,7 @@
         }
         - {
           regexpress: '#?uboot_overlay_addr4=.*$',
-          replacement: "uboot_overlay_addr4=/lib/firmware/BB-SHEPHERD-CAPE-24A0.dtbo",
+          replacement: "uboot_overlay_addr4=/lib/firmware/BB-SHEPHERD-CAPE-25A0.dtbo",
         }
         - {
           regexpress: '#?uboot_overlay_addr5=.*$',
@@ -119,7 +117,7 @@
         sheep_refresh_source: false
         sheep_rebuild_kernel_module: true  # default: true
         sheep_rebuild_python_package: true # default: true
-        sheep_cape_hw_ver: "24"
+        sheep_cape_hw_ver: "25"
 
     - name: Reset Watchdog-Config
       ansible.builtin.command: "rm /etc/shepherd/watchdog.yaml"

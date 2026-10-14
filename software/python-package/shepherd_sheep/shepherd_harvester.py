@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import platform
 import time
 from contextlib import ExitStack
@@ -42,7 +42,6 @@ class ShepherdHarvester(ShepherdIO):
         log.debug("ShepherdHarvester-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
-            trace_iv=cfg.power_tracing,
             trace_gpio=None,
         )
         self.cfg = cfg
@@ -66,7 +65,7 @@ class ShepherdHarvester(ShepherdIO):
 
         store_path = cfg.output_path.resolve()
         if store_path.is_dir():
-            timestamp = datetime.datetime.fromtimestamp(self.start_time, tz=local_tz())
+            timestamp = dt.datetime.fromtimestamp(self.start_time, tz=local_tz())
             timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
             # ⤷ closest to ISO 8601, avoids ":"
             store_path /= f"hrv_{timestring}.h5"
@@ -78,8 +77,7 @@ class ShepherdHarvester(ShepherdIO):
             datatype=cfg.virtual_harvester.get_datatype(),
             window_samples=cfg.virtual_harvester.calc_window_size(for_emu=True),
             cal_data=self.cal_hrv,
-            sample_rate=cfg.power_tracing.samplerate if log_iv else None,
-            only_power=cfg.power_tracing.only_power if log_iv else False,
+            cfg_pwr=cfg.power_tracing if log_iv else None,
             # TODO: enabled options above should raise for ivcurves
             compression=cfg.output_compression,
             force_overwrite=cfg.force_overwrite,
@@ -123,16 +121,28 @@ class ShepherdHarvester(ShepherdIO):
         self.writer.check_monitors()
 
         log.info("waiting %.2f s until start", self.start_time - time.time())
-        while self.wait_for_start(5, raising=False):
+        while self.wait_for_start(1, raising=False):  # auto rate limiting
             # pre-experiment loop that collects pru-util values
-            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
             if data_ut:
+                data_ut.calc_mean()
                 self.writer.write_util_buffer(data_ut)
             if time.time() > self.start_time + 10:
                 raise TimeoutError("Timed out waiting for Start")
 
+        # rate limit for main loop depending on load
+        dur_sleep_idle = 0.66 * min(
+            self.shared_mem.util.DURATION_CHUNK_S,
+            self.shared_mem.iv_out.DURATION_CHUNK_S,
+        )
+        dur_sleep_load = dur_sleep_idle / 2
+
         self.handle_pru_messages(panic_on_restart=False)
-        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
+        log.info(
+            ">>> Shepherd started! <<< T_sys = %.3f, sleep_idle = %.3f s",
+            time.time(),
+            dur_sleep_idle,
+        )
         if not check_pru_applied_settings():
             log.error("PRU has NOT yet applied the settings!")
 
@@ -156,27 +166,20 @@ class ShepherdHarvester(ShepherdIO):
         ts_data_last = self.start_time
         before_ts_end = True
         while True:
-            data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
-            data_ut = self.shared_mem.util.read(
-                timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
-            )
+            data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
             if data_ut:
+                data_ut.calc_mean()
+                data_ut.check_status(timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra)
                 self.writer.write_util_buffer(data_ut)
 
+            data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
             if data_iv is not None:
                 prog_bar.update(n=int(10 * data_iv.duration()))
-                if data_iv.timestamp() > ts_end:
+                if data_iv.timestamp_s() > ts_end:
                     log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     break
                 ts_data_last = time.time()
-                try:
-                    self.writer.write_iv_buffer(data_iv)
-                except OSError as _xpt:
-                    log.error(
-                        "Failed to write data to HDF5-File - will STOP! error = %s",
-                        _xpt,
-                    )
-                    break
+                self.writer.write_iv_buffer(data_iv)
             if before_ts_end and (time.time() > ts_end):
                 log.debug("End of measurement reached -> will collect remaining data")
                 before_ts_end = False
@@ -196,17 +199,10 @@ class ShepherdHarvester(ShepherdIO):
                 if time.time() - ts_data_last > 5:
                     log.info("Data-collection ran dry for 5s -> begin to exit now")
                     break
-                # rest of loop is non-blocking, so we better doze a while if nothing to do
-                time.sleep(0.010)  # self.segment_period_s
+                time.sleep(dur_sleep_idle)  # doze a while if nothing to do
             else:
-                time.sleep(0.001)
+                time.sleep(dur_sleep_load)
 
         prog_bar.close()
         # Detect recorder missing start / end
-        gain = self.writer.ds_time.attrs["gain"]
-        file_start = self.writer.ds_time[0] * gain
-        file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
-        if file_start > self.start_time:
-            log.error("Recorder missed %.3f s IVTrace after start", file_start - self.start_time)
-        if file_end < ts_end - max(1e-3, 2.0 / self.writer.samplerate_sps):
-            log.error("Recorder missed ~ %.3f s IVTrace before end", file_end - ts_end)
+        self.writer.rec_iv.check_dataset(self.start_time, ts_end)

@@ -166,7 +166,7 @@ class LogicTrace:
     def calc_expected_value(data: np.ndarray, *, mode_log10: bool = False) -> float:
         """Return expected duration (=10**X)."""
         # data with timestamp!
-        if data.shape[0] < 100:
+        if len(data) < 100:
             raise ValueError("Function needs more datapoints")
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")
@@ -178,7 +178,7 @@ class LogicTrace:
     @staticmethod
     def get_statistics(data: np.ndarray, name: str) -> list:
         # data with timestamp!
-        if data.shape[0] < 100:
+        if len(data) < 100:
             raise ValueError("Function needs more datapoints")
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")
@@ -232,7 +232,7 @@ class LogicTrace:
         y_side: int = 1000,
     ) -> None:
         # data with timestamp!
-        if data.shape[0] < 100:
+        if len(data) < 100:
             raise ValueError("Function needs more datapoints")
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")

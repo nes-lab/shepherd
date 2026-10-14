@@ -23,28 +23,28 @@ class SysUtilMonitor(Monitor):
 
         self.data.create_dataset(
             name="cpu",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype="u1",
             maxshape=(None,),
-            chunks=self.increment,
+            chunks=(self.chunk_size,),
         )
         self.data["cpu"].attrs["unit"] = "%"
         self.data["cpu"].attrs["description"] = "cpu_util [%]"
         self.data.create_dataset(
             name="ram",
-            shape=(self.increment, 2),
+            shape=(self.increment_size, 2),
             dtype="u1",
             maxshape=(None, 2),
-            chunks=(self.increment, 2),
+            chunks=(self.chunk_size, 2),
         )
         self.data["ram"].attrs["unit"] = "%"
         self.data["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
         self.data.create_dataset(
             name="io",
-            shape=(self.increment, 4),
+            shape=(self.increment_size, 4),
             dtype="u8",
             maxshape=(None, 4),
-            chunks=(self.increment, 4),
+            chunks=(self.chunk_size, 4),
         )
         self.data["io"].attrs["unit"] = "n"
         self.data["io"].attrs["description"] = (
@@ -52,10 +52,10 @@ class SysUtilMonitor(Monitor):
         )
         self.data.create_dataset(
             name="net",
-            shape=(self.increment, 2),
+            shape=(self.increment_size, 2),
             dtype="u8",
             maxshape=(None, 2),
-            chunks=(self.increment, 2),
+            chunks=(self.chunk_size, 2),
         )
         self.data["net"].attrs["unit"] = "n"
         self.data["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
@@ -82,15 +82,7 @@ class SysUtilMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=4 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
+        self.shutdown_thread()
         self.data["cpu"].resize((self.position,))
         self.data["ram"].resize((self.position, 2))
         self.data["io"].resize((self.position, 4))
@@ -105,9 +97,9 @@ class SysUtilMonitor(Monitor):
         while not self.event.wait(self.poll_interval):  # rate limiter & exit
             ts_now_ns = int(time.time() * 1e9)
             if ts_now_ns >= self.log_timestamp_ns:
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])  # a faster .shape[0]
                 if self.position >= data_length:
-                    data_length += self.increment
+                    data_length += self.increment_size
                     self.data["time"].resize((data_length,))
                     self.data["cpu"].resize((data_length,))
                     self.data["ram"].resize((data_length, 2))
@@ -133,3 +125,21 @@ class SysUtilMonitor(Monitor):
                 # TODO: add temp, not working:
                 #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        runtime_addition = 30
+        datarate_sps = 1
+        data_length = max(
+            len(self.data["time"]),
+            self.increment_size,
+            round(datarate_sps * (runtime_addition + value_s)),
+        )
+        self.data["time"].resize((data_length,))
+        self.data["cpu"].resize((data_length,))
+        self.data["ram"].resize((data_length, 2))
+        self.data["io"].resize((data_length, 4))
+        self.data["net"].resize((data_length, 2))

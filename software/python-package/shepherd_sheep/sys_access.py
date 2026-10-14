@@ -174,6 +174,9 @@ gpio_offset: int | None = None
 
 
 def get_gpio_info() -> list[str]:
+    if not kernel_module_is_active():
+        # TODO: this should prevent running the FN on other systems
+        return []
     ret = subprocess.run(
         ["/usr/bin/sudo", "/usr/bin/gpioinfo"],
         timeout=10,
@@ -214,6 +217,9 @@ def gpio_name_2_num(name: str | int) -> int:
     if isinstance(name, int):
         # keep backward compat for deprecated num-system (i.e. gpio 68)
         return name
+    if not kernel_module_is_active():
+        # TODO: this should prevent running the FN on other systems
+        return 0
 
     global gpio_data  # noqa: PLW0603
     if gpio_data is None:

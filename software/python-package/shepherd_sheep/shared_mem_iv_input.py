@@ -29,22 +29,29 @@ class IVTrace:
         current: np.ndarray,
         timestamp_ns: np.ndarray | int | None = None,
     ) -> None:
-        self.timestamp_ns = timestamp_ns
-        self.voltage = voltage
-        self.current = current
+        self.ds_time = timestamp_ns
+        self.ds_voltage = voltage
+        self.ds_current = current
 
     def __len__(self) -> int:
-        if isinstance(self.timestamp_ns, int | None):
-            return min(self.voltage.size, self.current.size)
-        if isinstance(self.timestamp_ns, np.ndarray):
-            return min(self.voltage.size, self.current.size, self.timestamp_ns.size)
+        if isinstance(self.ds_time, int | None):
+            return min(len(self.ds_voltage), len(self.ds_current))
+        if isinstance(self.ds_time, np.ndarray):
+            return min(len(self.ds_voltage), len(self.ds_current), len(self.ds_time))
         raise TypeError("Got unexpected timestamp type")
 
-    def timestamp(self) -> float:
-        if isinstance(self.timestamp_ns, int):
-            return self.timestamp_ns / 1e9
-        if isinstance(self.timestamp_ns, np.ndarray):
-            return self.timestamp_ns.item(0) / 1e9
+    def timestamp_s(self) -> float:
+        if isinstance(self.ds_time, int):
+            return self.ds_time / 1e9
+        if isinstance(self.ds_time, np.ndarray):
+            return self.ds_time.item(0) / 1e9
+        raise TypeError("Got unexpected timestamp type")
+
+    def timestamp_ns(self) -> int:
+        if isinstance(self.ds_time, int):
+            return self.ds_time
+        if isinstance(self.ds_time, np.ndarray):
+            return int(self.ds_time.item(0))
         raise TypeError("Got unexpected timestamp type")
 
     def duration(self) -> float:
@@ -67,9 +74,13 @@ class SharedMemIVInput:
 
     N_BUFFER_CHUNKS_DEF: int = 16
     N_SAMPLES_PER_CHUNK_DEF: int = N_SAMPLES // N_BUFFER_CHUNKS_DEF
+    # DURATION_CHUNK_S is dynamic, see below in init
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS_DEF
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_INP_INTERVAL_S
+
+    ST_U32 = struct.Struct("=L")
+    ST_U64 = struct.Struct("=Q")
 
     # TODO: something like that would allow automatic processing
     SIZES: Mapping[str, int] = MappingProxyType(
@@ -86,6 +97,7 @@ class SharedMemIVInput:
 
         self.n_samples_per_chunk: int = n_samples_per_segment or self.N_SAMPLES_PER_CHUNK_DEF
         self.n_buffer_chunks: int = self.N_SAMPLES // self.n_samples_per_chunk
+        self.duration_chunk_s: float = commons.BUFFER_IV_INP_INTERVAL_S / self.n_buffer_chunks
 
         self.size_by_sys: int = sysfs.get_trace_iv_inp_size()
         self.address: int = sysfs.get_trace_iv_inp_address()
@@ -128,11 +140,11 @@ class SharedMemIVInput:
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_idx_sys)
-        self._mm.write(struct.pack("=L", commons.IDX_OUT_OF_BOUND))
+        self._mm.write(self.ST_U32.pack(commons.IDX_OUT_OF_BOUND))
         self._mm.seek(self._offset_samples)
         self._mm.write(bytes(bytearray(self.SIZE_SAMPLES)))
         self._mm.seek(self._offset_canary)
-        self._mm.write(struct.pack("=L", commons.CANARY_VALUE_U32))
+        self._mm.write(self.ST_U32.pack(commons.CANARY_VALUE_U32))
 
     def __exit__(
         self,
@@ -145,7 +157,7 @@ class SharedMemIVInput:
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
-        canary: int = struct.unpack("=L", self._mm.read(4))[0]
+        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
@@ -157,7 +169,7 @@ class SharedMemIVInput:
         if self.index_next is None:
             return min(self.N_SAMPLES, self.n_samples_per_chunk)
         self._mm.seek(self._offset_idx_pru)
-        index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
+        index_pru: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if index_pru > self.N_SAMPLES:
             # still out-of-bound (u32_max)
             index_pru = self.N_SAMPLES - 1
@@ -177,43 +189,50 @@ class SharedMemIVInput:
     def can_fit_new_chunk(self) -> bool:
         return self.get_size_available() >= self.n_samples_per_chunk
 
-    def write(
+    def write_iv(
         self,
-        data: IVTrace,
+        data: IVTrace | np.ndarray,
         cal: CalibrationSeries | None,
         *,
         verbose: bool = False,
     ) -> bool:
-        if len(data) > self.get_size_available():
+        len_data = len(data)
+        if len_data > self.get_size_available():
             return False  # no available space
         ts_start = time.time() if verbose else None
         if self.index_next is None:
             self.index_next = 0
-        # TODO: This part could be optimized further - write a benchmark
-        # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        if cal:
+
+        if isinstance(data, IVTrace):
+            # transform raw ADC data to SI-Units
+            # -> the virtual-source-emulator in PRU expects uV and nV
+            iv_data = np.empty((len_data, 2), dtype=data.ds_voltage.dtype)
             # option to disable scaling here if already done (performance improvement)
-            data.voltage = cal.voltage.raw_to_si(data.voltage).astype(np.uint32)
-            data.current = cal.current.raw_to_si(data.current).astype(np.uint32)
-        # interweave data (voltage | current in parallel)
-        iv_data = np.empty((2 * len(data),), dtype=data.voltage.dtype)
-        iv_data[0::2] = data.voltage[: len(data)]
-        iv_data[1::2] = data.current[: len(data)]
+            if cal:
+                iv_data[:, 0] = cal.voltage.raw_to_si(data.ds_voltage).astype(np.uint32)
+                iv_data[:, 1] = cal.current.raw_to_si(data.ds_current).astype(np.uint32)
+            else:
+                # interweave data (voltage | current in parallel)
+                iv_data[:, 0] = data.ds_voltage[:len_data]
+                iv_data[:, 1] = data.ds_current[:len_data]
+        else:
+            # reshape just to be safe - its cheap
+            iv_data = data.reshape((len_data, 2), order="C")
+
         # Seek buffer location in memory and skip header
-        if self.index_next + len(data) <= self.N_SAMPLES:
+        if self.index_next + len_data <= self.N_SAMPLES:
             self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
             self._mm.write(iv_data.tobytes())
         else:
-            cut_position = 2 * (self.N_SAMPLES - self.index_next)
+            cut_position = self.N_SAMPLES - self.index_next
             self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
             self._mm.write(iv_data[:cut_position].tobytes())
             if len(iv_data[:cut_position]) + len(iv_data[cut_position:]) > len(iv_data):
-                log.error(
-                    "NUMPY specific error %d, %d, %d",
-                    len(iv_data[:cut_position]),
-                    len(iv_data[cut_position:]),
-                    len(iv_data),
+                msg = (
+                    f"NUMPY specific error "
+                    f"{len(iv_data[:cut_position])}, {len(iv_data[cut_position:])}, {len(iv_data)}"
                 )
+                raise ValueError(msg)
             self._mm.seek(self._offset_samples)
             self._mm.write(iv_data[cut_position:].tobytes())
 
@@ -228,7 +247,7 @@ class SharedMemIVInput:
         # update sys-index
         self.index_next = (self.index_next + len(data)) % self.N_SAMPLES
         self._mm.seek(self._offset_idx_sys)
-        self._mm.write(struct.pack("=L", self.index_next))
+        self._mm.write(self.ST_U32.pack(self.index_next))
 
         if self.index_next < self.n_samples_per_chunk:  # once a cycle
             self.check_canary()

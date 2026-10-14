@@ -18,14 +18,14 @@ from shepherd_core.logger import log
 from tqdm import tqdm
 
 rng = np.random.default_rng()
+
 reduction_factor = 100
 iterations = 80
 
 data = [
-    rng.integers(low=0, high=2**18, size=1_000_000, dtype=np.uint32)
+    rng.integers(low=0, high=2**18, size=100_000, dtype=np.uint32)
     for _ in tqdm(range(iterations), desc="Prepare Input")
 ]
-
 
 for i in tqdm(range(iterations), desc="u32-Reshape"):
     len_add1 = len(data[i])
@@ -86,7 +86,7 @@ for i in tqdm(range(iterations), desc="Reshape-u64-Final"):
         data[i][0:len_add2]
         .reshape(len_new, reduction_factor)
         .mean(axis=1, dtype=np.uint64)
-        .clip(0, 2**32)
+        .clip(0, 2**32 - 1)
         .astype(np.uint32)
     )
     if _new.shape[0] != len_new:

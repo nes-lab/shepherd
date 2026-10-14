@@ -4,7 +4,8 @@ DTBO_ALL := $(DTS_ALL:.dts=.dtbo)
 
 CPP_FLAGS = -Iinclude -Iarch -D__DTS__ -undef -nostdinc \
 				-I/opt/source/dtb-6.18.x/include/ \
-				-I/opt/source/dtb-6.12/include/
+				-I/opt/source/dtb-6.15/include/
+				#-I/opt/source/dtb-6.12/include/
 				# 18.x is future use, but not available on current image
 
 DTC_VERSION = $(shell dtc --version | grep ^Version | sed 's/^.* //g')

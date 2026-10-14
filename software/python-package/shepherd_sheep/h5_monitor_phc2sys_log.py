@@ -22,10 +22,10 @@ class PHC2SYSLogMonitor(Monitor):
 
         self.data.create_dataset(
             name="message",
-            shape=(self.increment,),
+            shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.chunk_size,),
             compression=compression,
         )
 
@@ -62,15 +62,7 @@ class PHC2SYSLogMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=4 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
+        self.shutdown_thread()
         self.process.terminate()
         self.data["message"].resize((self.position,))
         super().__exit__()
@@ -80,6 +72,7 @@ class PHC2SYSLogMonitor(Monitor):
         # 2026-07-02T12:10:54.881232+0200 sheep10 phc2sys[418]:
         # [83167.767] CLOCK_REALTIME phc offset       114 s2 freq +129055 delay   1916
         while not self.event.is_set():
+            self.event.wait(self.rate_limit_interval)
             line = self.process.stdout.readline()
             if len(line) < 1:
                 self.event.wait(self.poll_interval)  # rate limiter
@@ -97,9 +90,9 @@ class PHC2SYSLogMonitor(Monitor):
             line = line[msg_begin:].strip()[:128]
 
             try:
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])  # a faster .shape[0]
                 if self.position >= data_length:
-                    data_length += self.increment
+                    data_length += self.increment_size
                     self.data["time"].resize((data_length,))
                     self.data["message"].resize((data_length,))
             except RuntimeError:
@@ -122,3 +115,15 @@ class PHC2SYSLogMonitor(Monitor):
         if self.position == 0:
             log.warning("[%s] Service not running? No data collected yet", type(self).__name__)
             return
+
+    def preshape_by_runtime(self, value_s: float) -> None:
+        """Reshape some datasets with predictable length."""
+        runtime_addition = 30
+        datarate_sps = 1
+        data_length = max(
+            len(self.data["time"]),
+            self.increment_size,
+            round(datarate_sps * (runtime_addition + value_s)),
+        )
+        self.data["time"].resize((data_length,))
+        self.data["message"].resize((data_length,))

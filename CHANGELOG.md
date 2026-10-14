@@ -1,11 +1,33 @@
 # History of Changes
 
-## 2026.09.1 - unreleased
+## 2026.10.1 - unreleased
 
 Sheep
 - improve performance of Hdf5-Writer by adding shuffle and optimizing chunking of timeseries
 - fix shared-mem access (potential bug)
 - add & update performance-benchmarks
+- fix writing gpio-mask to PRU
+- fix emu with no power-tracing
+- improve performance substantially (emu & hrv)
+  - use float-point-ops for power-calculation
+  - avoid cache-problems in hdf5-datasets (power-trace @ full rate)
+  - gpio sampling costs much less overhead
+  - pre-shape predictable datasets (less file-IO)
+  - use latest libver for h5py to improve chunking-performance
+  - grow datasets by 10x chunk-size by default (100x for GPIO)
+  - files compress better
+  - replace np.shape[0] by len(np) (its faster)
+  - membuffers pre-assemble views that are handed out to the queues
+  - rate-limit monitors and recorders
+  - switch from multiprocessing.queue to queue.queue for less overhead (also for logging)
+- main loops for emu & hrv are less blocking
+  - put recorders (IV, power and PRU-Util) into threads, fed by queues
+  - only input-data for emu is buffered once and can block the loop
+  - every recorder is now able to drop data (if queue full)
+- monitors got substantial upgrades
+  - add .check_status() to determine health of embedded data
+  - add .flush_queues() to make sure data is fully written
+  - add .shutdown_thread() to minimize boilerplate-code
 
 Watchdog
 - add tooling to automatically update the hostname. This is helpful when swapping SD-Cards of the observers as this was the last manual update step. The hostname is derived from the MAC address. This will only work if the MAC address is found in the observer-fixtures of the testbed-client.
@@ -74,6 +96,44 @@ Speed-Benchmark on a Beaglebone Green (compiled from [testbench_direct_rw](https
 | lzf-shuffle   | 3.994 / 10.913 s | 4.231 / 20.715 s |
 | gzip1-shuffle | 4.901 / 12.583 s | 5.932 / 22.650 s |
 | gzip6-shuffle | 4.947 / 14.875 s | 5.847 / 24.561 s |
+
+Selected general improvements (compiled from [benchmark_modes](https://github.com/nes-lab/shepherd/blob/main/software/python-package/tests_manual/benchmark_modes_results.md))
+
+On testbed / old software-versions
+
+| type                          | cpu_min | cpu_max | cpu_mean | MiB/s | note                   |
+|-------------------------------|---------|---------|----------|-------|------------------------|
+| EMU optimized ivtrace         | 54      | 100     | 72.5     | 1.087 | had errors, incomplete |
+| EMU optimized notrace         | 31      | 100     | 44.5     | 0.002 |                        |
+| EMU power & samplerate=10     | 47      | 100     | 63.8     | 0.003 |                        |
+| EMU power & samplerate=1000   | 57      | 100     | 69.5     | 0.010 |                        |
+| EMU power & samplerate=100000 | 68      | 100     | 82.8     | 0.501 |                        |
+| EMU iv & samplerate=10        | 42      | 88      | 56.7     | 0.003 |                        |
+| EMU iv & samplerate=1000      | 44      | 100     | 58.6     | 0.010 |                        |
+| EMU iv & samplerate=100000    | 66      | 100     | 79.1     | 0.687 |                        |
+
+TODO: get GPIO-numbers on testbed
+
+New Version
+
+| type                          | cpu_min | cpu_max | cpu_mean | MiB/s | note      |
+|-------------------------------|---------|---------|----------|-------|-----------|
+| EMU optimized ivtrace         | 14      | 58      | 47.8     | 0.478 |           |
+| EMU optimized notrace         | 8       | 49      | 22.9     | 0.001 |           |
+| EMU hrvformat-input ivtrace   | 39      | 55      | 48.6     | 0.478 |           |
+| EMU power & samplerate=10     | 31      | 78      | 47.7     | 0.001 |           |
+| EMU power & samplerate=1000   | 12      | 73      | 51.2     | 0.005 |           |
+| EMU power & samplerate=100000 | 36      | 62      | 52.5     | 0.360 |           |
+| EMU iv & samplerate=10        | 16      | 70      | 39.2     | 0.001 |           |
+| EMU iv & samplerate=1000      | 25      | 66      | 39.6     | 0.006 |           |
+| EMU iv & samplerate=100000    | 15      | 74      | 52.4     | 0.478 |           |
+| EMU gpio datarate57600        | 34      | 77      | 48.3     | 0.287 |           |
+| EMU gpio datarate115200       | 42      | 86      | 53.3     | 0.372 |           |
+| EMU gpio datarate230400       | 51      | 92      | 62.3     | 0.519 |           |
+| EMU gpio datarate460800       | 66      | 97      | 76.1     | 0.768 |           |
+| EMU gpio datarate921600       | 86      | 100     | 96.9     | 1.128 | high load |
+| EMU gpio datarate1000000      | 62      | 100     | 99.3     | 1.223 | high load |
+
 
 ## 2026.07.1
 

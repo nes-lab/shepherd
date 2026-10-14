@@ -26,10 +26,9 @@ from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
+from shepherd_core.writer import Writer as CoreWriter
 from shepherd_sheep.cli import cli
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
-from shepherd_sheep.h5_writer import Writer
-from shepherd_sheep.shared_mem_iv_input import IVTrace
 
 
 def random_data(length: int) -> np.ndarray:
@@ -40,20 +39,19 @@ def random_data(length: int) -> np.ndarray:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
-    with Writer(
+    with CoreWriter(
         store_path,
         cal_data=CalibrationHarvester(),
         force_overwrite=True,
     ) as store:
         store.store_hostname("Blinky")
+        len_ = 10_000
         for i in range(100):
-            len_ = 10_000
-            mock_data = IVTrace(
+            store.append_iv_data_raw(
+                timestamp=i * len_ * SAMPLE_INTERVAL_NS,
                 voltage=random_data(len_),
                 current=random_data(len_),
-                timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
             )
-            store.write_iv_buffer(mock_data)
     return store_path
 
 
