@@ -57,7 +57,9 @@ path_storage = Path("/var/shepherd/recordings")
 path_firmware = Path(__file__).parent / "firmwares"
 skip_hrv = False
 
-log.info("| %s | cpu_min | cpu_max | cpu_mean | MiB/s | note |", "type".ljust(34))
+log.info(
+    "| %s | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |", "Type".ljust(34)
+)
 log.info("|------------------------------------|---------|---------|----------|-------|------|")
 
 
