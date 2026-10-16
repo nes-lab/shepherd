@@ -76,7 +76,7 @@
       - "--exclude=__pycache__"
   when: sheep_refresh_source | bool
 
-- name: Own shepherd codebase
+- name: Take ownership of shepherd codebase path
   ansible.builtin.file:
     path: "{{ sheep_install_path }}/"
     state: directory
