@@ -1,5 +1,9 @@
 ---
 
+- name: APT - manual update - ansible fails with own commands
+  ansible.builtin.command:
+    cmd: "sudo apt update"
+
 - name: Derive Hostname from MAC
   ansible.builtin.include_tasks:
     file: derive_hostname_from_mac.yml
