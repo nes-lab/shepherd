@@ -58,7 +58,7 @@ path_firmware = Path(__file__).parent / "firmwares"
 skip_hrv = False
 
 log.info(
-    "| %s | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |", "Type".ljust(34)
+    "| %s | CPU_min [%%] | CPU_max [%%] | CPU_mean [%%] | File [MiB/s] | Note |", "Type".ljust(34)
 )
 log.info("|------------------------------------|---------|---------|----------|-------|------|")
 
@@ -103,7 +103,7 @@ def calculate_stats(file: Path, title: str) -> None:
 
 
 def bench_hrv_sweep_starttime() -> None:
-    for _offset in range(10, 30, 5):
+    for _offset in range(15, 35, 5):
         title = f"HRV t_offset={_offset}"
         path_output = path_storage / f"hrv_toffset{_offset}.h5"
         if not path_output.exists():
@@ -122,7 +122,7 @@ def bench_hrv_sweep_starttime() -> None:
 
 def bench_hrv_sweep_samplerate_poweronly() -> None:
     for _power_only in [True, False]:
-        for _samplerate in [10, 100, 1_000, 100_000]:
+        for _samplerate in [10, 100, 1_000, 10_000, 100_000]:
             _pwr_add = "power" if _power_only else "iv"
             title = f"HRV {_pwr_add} & samplerate={_samplerate}"
             path_output = path_storage / f"hrv_{_pwr_add}_samplerate{_samplerate}.h5"
@@ -260,7 +260,7 @@ def bench_emu_sweep_starttime() -> None:
 def bench_emu_sweep_samplerate_poweronly() -> None:
     path_input = generate_shepherd_file(Compression.lzf, random=True)  # Worst Case!
     for _power_only in [True, False]:
-        for _samplerate in [10, 100, 1_000, 100_000]:
+        for _samplerate in [10, 100, 1_000, 10_000, 100_000]:
             _pwr_add = "power" if _power_only else "iv"
             title = f"EMU {_pwr_add} @ samplerate={_samplerate}"
             path_output = path_storage / f"emu_{_pwr_add}_samplerate{_samplerate}.h5"
@@ -361,15 +361,17 @@ def bench_emu_sweep_input_options() -> None:
 
 
 def bench_emu_sweep_datarates() -> None:
-    for _rate in [
-        57_600,  # ~ 37 kSPS, +4% util
-        115_200,  # ~ 72 kSPS, +11% util
-        230_400,  # ~ 145 kSPS, +23% util -> edgy
-        460_800,  # ~ 267 kSPS, +43% util
-        921_600,  # ~ 450 kSPS
-        1_000_000,  # ~ 500 kSPS,
-    ]:  # ,  460_800, 921_600, 1_000_000]:
-        for _type in ["gpio"]:  # "uart",
+    for _type in ["gpio", "uart"]:
+        for _rate in [
+            57_600,  # ~ 37 kSPS, +4% util
+            115_200,  # ~ 72 kSPS, +11% util
+            230_400,  # ~ 145 kSPS, +23% util -> edgy
+            460_800,  # ~ 267 kSPS, +43% util
+            921_600,  # ~ 450 kSPS
+            1_000_000,  # ~ 500 kSPS,
+        ]:
+            if _type == "uart" and _rate > 500_000:
+                continue
             title = f"EMU {_type} datarate={_rate}"
             path_output = path_storage / f"emu_{_type}_rate_{_rate}.h5"
             if not path_output.exists():
