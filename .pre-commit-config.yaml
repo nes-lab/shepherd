@@ -65,7 +65,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.0
+    rev: v0.17.1
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -94,7 +94,7 @@ repos:
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.30.1
+    rev: v1.31.1
     hooks:
       - id: zizmor
         args: ["--min-severity", "high", "--no-progress", "--fix", "."]
@@ -104,6 +104,14 @@ repos:
     hooks:
       - id: clang-format
         types_or: [c++, c]
+
+  - repo: https://github.com/rvben/rumdl-pre-commit
+    rev: v0.3.0
+    hooks:
+      - id: rumdl      # Lint only;
+        args: [--fix]
+      - id: rumdl-fmt  # Pure format, exits 0 on violations
+
 
   # cpp-check comes last! fails if uninstalled
 #  - repo: https://github.com/pocc/pre-commit-hooks

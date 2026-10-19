@@ -4,7 +4,7 @@ The shepherd kernel module provides a user interface that exposes relevant param
 
 ## Basic Functionality
 
-```{caution}
+```text {caution}
 OUT OF DATA
 ```
 
@@ -16,7 +16,6 @@ OUT OF DATA
 - `memory/address`: Physical address of the shared memory area that contains all `n_buffers` data buffers used to exchange data
 - `memory/size`: Size of the shared memory area in bytes
 - `pru_msg_box`: in and out message box to communicate with the PRUs
-
 - `pru0_firmware` & `pru1_firmware`: allows to load a custom firmware, like `am335x-pru0-programmer-SWD-fw`
 
 ## Virtual Source
@@ -25,7 +24,6 @@ OUT OF DATA
 - `calibration_settings`: Load calibration settings. They are used in the virtual source algorithm.
 - `virtual_converter_settings`: Settings which configure the emulator algorithm.
 - `virtual_harvester_settings`: Settings for both the emulator and harvester mode
-
 - `sync/error_sum`: Integral of PID control error
 - `sync/error`: Instantaneous PID control error
 - `sync/correction`: PRU Clock correction (in ticks, ~5ns) as calculated by the PID controller
@@ -41,7 +39,7 @@ OUT OF DATA
 - `programmer/pin_tdo`: see comment above
 - `programmer/pin_tms`: see comment above
 
-```{note}
+```text {note}
 PRU0 must be loaded with a special firmware. The sheep-program does that automatically.
 ```
 

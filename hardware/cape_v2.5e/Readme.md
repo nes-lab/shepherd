@@ -77,7 +77,7 @@
 - holes on panel can be 3.2 mm for stencil printer
 - QR Code can now be directly created in Altium
 - larger tag-field (upper left corner)
-- perforated breaking lines on panels  (extension of milled line)
+- perforated breaking lines on panels (extension of milled line)
 - cage with paste?
 - JST-Connector needs paste on mech-pad
 - panel-bridge under JST - bad coincidence
@@ -127,7 +127,7 @@
 
 ### Target Port - Cape 2.4 (previous one)
 
-```
+```text
 pru_reg     name            BB_pin	sys_pin sys_reg
 r31_00      TARGET_GPIO0    P8_45	P8_14, g0[26] -> 26
 r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27] -> 27
@@ -143,7 +143,7 @@ r30_09/out  TARGET_BAT_OK   P8_29	-
 
 ### Target Port - Cape 2.5d (this revision)
 
-```
+```text
 pru_reg       name              BB_pin	sys_pin sys_reg
 pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART) SYS_PINs have swapped UART
 pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART) SYS_PINs have swapped UART
@@ -189,13 +189,13 @@ pru0_r30_07   - (free)          P9_25     (was CS_ADC2_REC)
   - Emu-Hotspots: U4, U3, U1,
   - GPIO-Hotspots: U7 (only one of many?)
 - Voltages
-    - L5V ⇾ 5.000 V
-    - L3V3 ⇾ 3.295 V
-    - 6V ⇾ 6.19 V
-    - 10V ⇾ 9.71 V
-    - -6V ⇾ -5.99 V
-    - 10mV ⇾ 0.010 V
-    - 5V ⇾ 5.20 V
+  - L5V ⇾ 5.000 V
+  - L3V3 ⇾ 3.295 V
+  - 6V ⇾ 6.19 V
+  - 10V ⇾ 9.71 V
+  - -6V ⇾ -5.99 V
+  - 10mV ⇾ 0.010 V
+  - 5V ⇾ 5.20 V
 
 ### Verification and Log
 

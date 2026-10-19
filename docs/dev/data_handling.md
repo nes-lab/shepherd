@@ -22,7 +22,6 @@ The userspace application writes the first block of harvesting data into one of 
 
 The user space code (written in python) has to extract the data from a buffer in the shared memory. Generally, a user space application can only access its own virtual address space. We use Linux's `/dev/mem` and python's `mmap.mmap(..)` to map the corresponding region of physical memory to the local address space. Using this mapping, we only need to seek the memory location of a buffer, extract the header information using `struct.unpack()` and interpret the raw data as numpy array using `numpy.frombuffer()`.
 
-
 ## Database
 
 In the current local implementation, all data is locally stored in the filesystem. This means, that for emulation, the harvesting data is first copied to the corresponding shepherd node. The sampled data (harvesting data for recording and energy traces for emulation) is also stored on each individual node first and later copied and merged to a central database. We use the popular HDF5 data format to store data and meta-information.

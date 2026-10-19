@@ -3,6 +3,7 @@
 ## 2026-10-07 - Testbed / Baseline before Optimizations
 
 NOTE:
+
 - Shepherd-Sheep v2026.8.1
 - Shepherd-Core v2026.7.1
 
@@ -75,6 +76,7 @@ NOTE:
 ## 2026-10-06 - local sd-card, dev-version, start of tuning
 
 Learnings for us:
+
 - input should be scaled to match gain of PRU
 - input & output should be lzf (despite being not standard-conform)
 - min settle time is 15 s
@@ -299,6 +301,7 @@ Learnings for the user:
 ## 2026-10-15 - Testbed, NAS
 
 Learning:
+
 - PTP & PHC2SYS have ~ 10% CPU-Overhead
 
 | type                            | cpu_min | cpu_max | cpu_mean | MiB/s | note      |
