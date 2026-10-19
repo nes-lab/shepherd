@@ -20,7 +20,30 @@ class UARTMonitor(Monitor):
         compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
     ) -> None:
-        super().__init__(target, compression, poll_interval=0.05)
+        self.data_threshold: int = 1
+        self.data_threshold_max: int = 4096
+        super().__init__(target, compression, poll_interval=0.1)
+        if self.data_threshold_max > 2 ** (self.exit_timeout_factor - 1):
+            log.error(
+                "[%s] wait threshold max is too large -> data might be missing at end",
+                type(self).__name__,
+            )
+            return
+        if self.poll_interval > (64_000 * 8 / 460_800) / 10:
+            log.error(
+                "[%s] poll interval is > 10x of expected flip buffer",
+                type(self).__name__,
+            )
+            return
+        """
+        - tty flip buffer should be 64 kiB
+        - at 460 kBaud (max of the interface) with full throughput that's roughly >= 1 s
+        - to be safe the interval will be 1/10 of that
+        - to rate limit the writes, a dynamic read-threshold will be set
+            - it will get larger for high traffic (to max)
+            - on low traffic it will go down to 1 byte
+        """
+
         self.uart = uart
         self.config = config
         self.ds_message = self.data.create_dataset(
@@ -89,7 +112,7 @@ class UARTMonitor(Monitor):
                 timeout=0,
             ) as uart:
                 while not self.event.is_set():
-                    if uart.in_waiting > 0:
+                    if uart.in_waiting >= self.data_threshold:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
                         if len(output) > 0:
@@ -98,13 +121,17 @@ class UARTMonitor(Monitor):
                                 data_length += self.increment_size
                                 self.ds_time.resize((data_length,))
                                 self.ds_message.resize((data_length,))
-                            self.ds_time[self.position] = int(
-                                time.time() * 1e9,
-                            )
+                            self.ds_time[self.position] = int(time.time() * 1e9)
                             self.ds_message[self.position] = output
                             self.position += 1
-                    else:
-                        self.event.wait(self.poll_interval)
+                            # on high traffic raise the threshold
+                            if self.data_threshold < self.data_threshold_max:
+                                self.data_threshold *= 2
+                        # on low traffic lower the threshold, until
+                        elif self.data_threshold > 1:
+                            self.data_threshold = self.data_threshold // 2
+
+                    self.event.wait(self.poll_interval)
 
         except RuntimeError:
             log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)

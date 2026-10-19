@@ -28,6 +28,7 @@ class Monitor(ABC):
         self.increment_size: int = increment_factor * chunk_size
         self.event = threading.Event()
         self.thread: threading.Thread | None = None
+        self.exit_timeout_factor: int = 20
 
         # create time, others have to be created in main class
         if "time" not in self.data:
@@ -71,7 +72,7 @@ class Monitor(ABC):
     def shutdown_thread(self) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=20 * self.poll_interval)
+            self.thread.join(timeout=self.exit_timeout_factor * self.poll_interval)
             if self.thread.is_alive():
                 log.warning(
                     "[%s] thread failed to end itself - will delete that instance",
