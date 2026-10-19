@@ -284,7 +284,11 @@ Learnings for the user:
 Biggest improvements come from changes in handling of hdf5-files.
 
 | Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note       |
-|---------------------------------|-------------|-------------|--------------|--------------|------------|
+| ------------------------------- | ----------- | ----------- | ------------ | ------------ | ---------- |
+| EMU optimized ShpInput ivtrace  | 29          | 48          | 40.6         | 0.478        |            |
+| EMU optimized ShpInput notrace  | 7           | 34          | 18.5         | 0.001        |            |
+| EMU optimized hrvformat ivtrace | 24          | 46          | 38.5         | 0.478        |            |
+| EMU optimized hrvformat notrace | 9           | 29          | 18.1         | 0.001        |            |
 | EMU optimized ShpInput ivtrace  | 26          | 57          | 43.4         | 0.479        |            |
 | EMU optimized ShpInput notrace  | 5           | 40          | 20.0         | 0.001        |            |
 | EMU optimized hrvformat ivtrace | 18          | 63          | 41.9         | 0.478        |            |
