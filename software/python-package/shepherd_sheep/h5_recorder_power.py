@@ -30,8 +30,9 @@ class PowerRecorder(Monitor):
             target,
             compression,
             poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
-            chunk_size=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
-            # NOTE: was 10 x CHUNK/REDUCTION_FACTOR, BUT performance was worse!
+            increment_factor=20,
+            chunk_size=10_000,
+            # NOTE: was SharedMemIVOutput.N_SAMPLES_PER_CHUNK, but hope to lower large nw-bursts
         )
         reductions_supported = [
             commons.SAMPLE_RATE_DEFAULT_SPS // rate for rate in samplerates_supported
