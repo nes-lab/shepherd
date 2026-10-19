@@ -5,6 +5,7 @@ from types import TracebackType
 
 import h5py
 import numpy as np
+from shepherd_core.data_models.experiment.observer_features import samplerates_supported
 
 from . import commons
 from .h5_monitor_abc import Monitor
@@ -25,7 +26,10 @@ class IVRecorder(Monitor):
             chunk_size=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
             # NOTE: was 10 x CHUNK/REDUCTION_FACTOR, BUT performance was worse!
         )
-        if reduction_factor not in [1, 10, 100, 1_000, 10_000]:
+        reductions_supported = [
+            commons.SAMPLE_RATE_DEFAULT_SPS // rate for rate in samplerates_supported
+        ]
+        if reduction_factor not in reductions_supported:
             raise ValueError("reduction-factor must be 10^n, n=[0..4]")
         # this monitor won't create its own datasets
         self.reduction_factor: int = reduction_factor

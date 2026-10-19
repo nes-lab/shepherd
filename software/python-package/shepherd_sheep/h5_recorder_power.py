@@ -8,6 +8,7 @@ import numpy as np
 from shepherd_core.data_models.base.calibration import CalibrationEmulator as CalEmu
 from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
 from shepherd_core.data_models.content.enum_datatypes import Compression
+from shepherd_core.data_models.experiment.observer_features import samplerates_supported
 
 from . import commons
 from .h5_monitor_abc import Monitor
@@ -32,7 +33,10 @@ class PowerRecorder(Monitor):
             chunk_size=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
             # NOTE: was 10 x CHUNK/REDUCTION_FACTOR, BUT performance was worse!
         )
-        if reduction_factor not in [1, 10, 100, 1_000, 10_000]:
+        reductions_supported = [
+            commons.SAMPLE_RATE_DEFAULT_SPS // rate for rate in samplerates_supported
+        ]
+        if reduction_factor not in reductions_supported:
             raise ValueError("reduction-factor must be 10^n, n=[0..4]")
         self.reduction_factor: int = reduction_factor
         self.reduce: bool = self.reduction_factor != 1
