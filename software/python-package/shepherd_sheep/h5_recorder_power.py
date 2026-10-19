@@ -77,7 +77,7 @@ class PowerRecorder(Monitor):
 
         self.ds_value = self.data.create_dataset(
             name="value",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype="u4",
             maxshape=(None,),
             chunks=(self.chunk_size,),
@@ -214,11 +214,10 @@ class PowerRecorder(Monitor):
             else:
                 ds_time, ds_pwr = self.transform_data(self.queue.get())
                 pos_end = self.position + len(ds_time)
-                data_length = len(self.ds_time)
-                if pos_end >= data_length:
-                    data_length += self.increment_size
-                    self.ds_time.resize((data_length,))
-                    self.ds_value.resize((data_length,))
+                if pos_end >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_value.resize((self.ds_size,))
                 self.ds_time[self.position : pos_end] = ds_time
                 self.ds_value[self.position : pos_end] = ds_pwr
                 self.position = pos_end
@@ -249,10 +248,10 @@ class PowerRecorder(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 0
         datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
-        data_length = max(
+        self.ds_size = max(
             len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.ds_time.resize((data_length,))
-        self.ds_value.resize((data_length,))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_value.resize((self.ds_size,))

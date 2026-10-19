@@ -28,7 +28,7 @@ class PruRecorder(Monitor):
 
         self.ds_values = self.data.create_dataset(
             name="values",
-            shape=(self.increment_size, 3),
+            shape=(self.ds_size, 3),
             dtype="u2",
             maxshape=(None, 3),
             chunks=(self.chunk_size, 3),
@@ -89,11 +89,10 @@ class PruRecorder(Monitor):
         if len_new < 1:
             return
         pos_end = self.position + len_new
-        data_length = len(self.ds_time)
-        if pos_end >= data_length:
-            data_length += max(self.increment_size, pos_end - data_length)
-            self.ds_values.resize((data_length, 3))
-            self.ds_time.resize((data_length,))
+        if pos_end >= self.ds_size:
+            self.ds_size += self.increment_size
+            self.ds_values.resize((self.ds_size, 3))
+            self.ds_time.resize((self.ds_size,))
         self.ds_time[self.position : pos_end] = data.timestamps_ns
         self.ds_values[self.position : pos_end, 0] = data.pru0_tsample_mean
         self.ds_values[self.position : pos_end, 1] = data.pru0_tsample_max
@@ -115,10 +114,10 @@ class PruRecorder(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 30
         datarate_sps = 1.0 / SharedMemUtilOutput.DURATION_SAMPLE_S
-        data_length = max(
+        self.ds_size = max(
             len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.ds_time.resize((data_length,))
-        self.ds_values.resize((data_length, 3))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_values.resize((self.ds_size, 3))

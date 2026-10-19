@@ -23,7 +23,7 @@ class SysUtilMonitor(Monitor):
 
         self.ds_cpu = self.data.create_dataset(
             name="cpu",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype="u1",
             maxshape=(None,),
             chunks=(self.chunk_size,),
@@ -33,7 +33,7 @@ class SysUtilMonitor(Monitor):
 
         self.ds_ram = self.data.create_dataset(
             name="ram",
-            shape=(self.increment_size, 2),
+            shape=(self.ds_size, 2),
             dtype="u1",
             maxshape=(None, 2),
             chunks=(self.chunk_size, 2),
@@ -43,7 +43,7 @@ class SysUtilMonitor(Monitor):
 
         self.ds_io = self.data.create_dataset(
             name="io",
-            shape=(self.increment_size, 4),
+            shape=(self.ds_size, 4),
             dtype="u8",
             maxshape=(None, 4),
             chunks=(self.chunk_size, 4),
@@ -54,7 +54,7 @@ class SysUtilMonitor(Monitor):
         )
         self.ds_net = self.data.create_dataset(
             name="net",
-            shape=(self.increment_size, 2),
+            shape=(self.ds_size, 2),
             dtype="u8",
             maxshape=(None, 2),
             chunks=(self.chunk_size, 2),
@@ -99,14 +99,13 @@ class SysUtilMonitor(Monitor):
         while not self.event.wait(self.poll_interval):  # rate limiter & exit
             ts_now_ns = int(time.time() * 1e9)
             if ts_now_ns >= self.log_timestamp_ns:
-                data_length = len(self.ds_time)  # a faster .shape[0]
-                if self.position >= data_length:
-                    data_length += self.increment_size
-                    self.ds_time.resize((data_length,))
-                    self.ds_cpu.resize((data_length,))
-                    self.ds_ram.resize((data_length, 2))
-                    self.ds_io.resize((data_length, 4))
-                    self.ds_net.resize((data_length, 2))
+                if self.position >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_cpu.resize((self.ds_size,))
+                    self.ds_ram.resize((self.ds_size, 2))
+                    self.ds_io.resize((self.ds_size, 4))
+                    self.ds_net.resize((self.ds_size, 2))
                 self.log_timestamp_ns += self.log_interval_ns
                 if self.log_timestamp_ns < ts_now_ns:
                     self.log_timestamp_ns = int(time.time() * 1e9)
@@ -135,13 +134,13 @@ class SysUtilMonitor(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 30
         datarate_sps = 1
-        data_length = max(
+        self.ds_size = max(
             len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.ds_time.resize((data_length,))
-        self.ds_cpu.resize((data_length,))
-        self.ds_ram.resize((data_length, 2))
-        self.ds_io.resize((data_length, 4))
-        self.ds_net.resize((data_length, 2))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_cpu.resize((self.ds_size,))
+        self.ds_ram.resize((self.ds_size, 2))
+        self.ds_io.resize((self.ds_size, 4))
+        self.ds_net.resize((self.ds_size, 2))

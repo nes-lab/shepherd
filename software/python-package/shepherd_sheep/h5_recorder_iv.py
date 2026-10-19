@@ -51,6 +51,11 @@ class IVRecorder(Monitor):
         self.ds_voltage = self.data["voltage"]
         self.ds_current = self.data["current"]
 
+        # as we take in external existing date, we have to condition it
+        self.ds_voltage.resize((self.ds_size,))
+        self.ds_current.resize((self.ds_size,))
+        self.ds_time.resize((self.ds_size,))
+
         self.dropped_data = False
         self.queue_size = int(
             80e6 / (SharedMemIVOutput.SIZE_SAMPLE * SharedMemIVOutput.N_SAMPLES_PER_CHUNK)
@@ -139,13 +144,12 @@ class IVRecorder(Monitor):
             else:
                 data = self.transform_data(self.queue.get())
                 pos_end = self.position + len(data)
-                data_length = len(self.ds_voltage)  # faster .shape[0]
-                if pos_end >= data_length:
-                    data_length += self.increment_size
-                    # TODO: faster with direct naming? i.e. self.ds_time
-                    self.ds_voltage.resize((data_length,))
-                    self.ds_current.resize((data_length,))
-                    self.ds_time.resize((data_length,))
+                self.ds_size = len(self.ds_time)
+                if pos_end >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_voltage.resize((self.ds_size,))
+                    self.ds_current.resize((self.ds_size,))
+                    self.ds_time.resize((self.ds_size,))
 
                 self.ds_voltage[self.position : pos_end] = data.ds_voltage
                 self.ds_current[self.position : pos_end] = data.ds_current
@@ -180,11 +184,11 @@ class IVRecorder(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 0
         datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
-        data_length = max(
+        self.ds_size = max(
             len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.ds_time.resize((data_length,))
-        self.ds_voltage.resize((data_length,))
-        self.ds_current.resize((data_length,))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_voltage.resize((self.ds_size,))
+        self.ds_current.resize((self.ds_size,))

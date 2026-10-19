@@ -37,7 +37,7 @@ class UARTMonitor(Monitor):
         self.config = config
         self.ds_message = self.data.create_dataset(
             name="message",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
             chunks=(self.chunk_size,),
@@ -105,11 +105,10 @@ class UARTMonitor(Monitor):
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
                         if len(output) > 0:
-                            data_length = len(self.ds_time)  # a faster .shape[0]
-                            if self.position >= data_length:
-                                data_length += self.increment_size
-                                self.ds_time.resize((data_length,))
-                                self.ds_message.resize((data_length,))
+                            if self.position >= self.ds_size:
+                                self.ds_size += self.increment_size
+                                self.ds_time.resize((self.ds_size,))
+                                self.ds_message.resize((self.ds_size,))
                             self.ds_time[self.position] = int(time.time() * 1e9)
                             self.ds_message[self.position] = output
                             self.position += 1

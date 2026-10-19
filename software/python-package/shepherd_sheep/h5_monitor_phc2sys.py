@@ -21,7 +21,7 @@ class PHC2SYSMonitor(Monitor):
         super().__init__(target, compression, poll_interval=0.51)
         self.ds_values = self.data.create_dataset(
             name="values",
-            shape=(self.increment_size, 3),
+            shape=(self.ds_size, 3),
             dtype="i8",
             maxshape=(None, 3),
             chunks=(self.chunk_size, 3),
@@ -94,11 +94,10 @@ class PHC2SYSMonitor(Monitor):
             except ValueError:
                 continue
             try:
-                data_length = len(self.ds_time)  # a faster .shape[0]
-                if self.position >= data_length:
-                    data_length += self.increment_size
-                    self.ds_time.resize((data_length,))
-                    self.ds_values.resize((data_length, 3))
+                if self.position >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_values.resize((self.ds_size, 3))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
@@ -137,10 +136,10 @@ class PHC2SYSMonitor(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 30
         datarate_sps = 1
-        data_length = max(
+        self.ds_size = max(
             len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.ds_time.resize((data_length,))
-        self.ds_values.resize((data_length, 3))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_values.resize((self.ds_size, 3))

@@ -29,12 +29,13 @@ class Monitor(ABC):
         self.event = threading.Event()
         self.thread: threading.Thread | None = None
         self.exit_timeout_factor: int = 20
+        self.ds_size = self.increment_size
 
         # create time, others have to be created in main class
         if "time" not in self.data:
             self.ds_time = self.data.create_dataset(
                 name="time",
-                shape=(self.increment_size,),
+                shape=(self.ds_size,),
                 dtype="u8",
                 maxshape=(None,),
                 chunks=(self.chunk_size,),

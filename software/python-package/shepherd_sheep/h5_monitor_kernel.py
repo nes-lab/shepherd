@@ -22,7 +22,7 @@ class KernelMonitor(Monitor):
 
         self.ds_message = self.data.create_dataset(
             name="message",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=(self.chunk_size,),
@@ -82,11 +82,10 @@ class KernelMonitor(Monitor):
             line = line[msg_begin:].strip()[:128]
 
             try:
-                data_length = len(self.ds_time)  # a faster .shape[0]
-                if self.position >= data_length:
-                    data_length += self.increment_size
-                    self.ds_time.resize((data_length,))
-                    self.ds_message.resize((data_length,))
+                if self.position >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_message.resize((self.ds_size,))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break

@@ -20,14 +20,14 @@ class SheepMonitor(Monitor):
         self.queue = get_message_queue()
         self.ds_message = self.data.create_dataset(
             name="message",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=(self.chunk_size,),
         )
         self.ds_level = self.data.create_dataset(
             name="level",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype="uint8",
             maxshape=(None,),
             chunks=(self.chunk_size,),
@@ -65,12 +65,11 @@ class SheepMonitor(Monitor):
                 self.event.wait(self.rate_limit_interval)
                 rec = self.queue.get()
                 try:
-                    data_length = len(self.ds_time)  # a faster .shape[0]
-                    if self.position >= data_length:
-                        data_length += self.increment_size
-                        self.ds_time.resize((data_length,))
-                        self.ds_message.resize((data_length,))
-                        self.ds_level.resize((data_length,))
+                    if self.position >= self.ds_size:
+                        self.ds_size += self.increment_size
+                        self.ds_time.resize((self.ds_size,))
+                        self.ds_message.resize((self.ds_size,))
+                        self.ds_level.resize((self.ds_size,))
                 except RuntimeError:
                     log.error(
                         "[%s] HDF5-File unavailable - will stop",

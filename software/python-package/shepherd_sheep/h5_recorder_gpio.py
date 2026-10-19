@@ -31,7 +31,7 @@ class GpioRecorder(Monitor):
 
         self.ds_value = self.data.create_dataset(
             name="value",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype="u2",
             maxshape=(None,),
             chunks=(self.chunk_size,),
@@ -87,11 +87,10 @@ class GpioRecorder(Monitor):
                 if len_new < 1:
                     return
                 pos_end = self.position + len_new
-                data_length = len(self.ds_time)  # a faster .shape[0]
-                if pos_end >= data_length:
-                    data_length += max(self.increment_size, pos_end - data_length)
-                    self.ds_time.resize((data_length,))
-                    self.ds_value.resize((data_length,))
+                if pos_end >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_value.resize((self.ds_size,))
                 self.ds_time[self.position : pos_end] = data.timestamps_ns
                 self.ds_value[self.position : pos_end] = data.bitmasks
                 self.position = pos_end
