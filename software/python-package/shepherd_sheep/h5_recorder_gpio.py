@@ -29,7 +29,7 @@ class GpioRecorder(Monitor):
             # NOTE: 5x to 10x has significantly worse performance
         )
 
-        self.data.create_dataset(
+        self.ds_value = self.data.create_dataset(
             name="value",
             shape=(self.increment_size,),
             dtype="u2",
@@ -39,8 +39,8 @@ class GpioRecorder(Monitor):
             # shuffle does not help here,
             # even for optimal 1-bit changes (size unchanged, performance-hit)
         )
-        self.data["value"].attrs["unit"] = "n"
-        self.data["value"].attrs["description"] = ryaml.dumps(GPIO_LOG_BIT_POSITIONS)
+        self.ds_value.attrs["unit"] = "n"
+        self.ds_value.attrs["description"] = ryaml.dumps(GPIO_LOG_BIT_POSITIONS)
 
         self.dropped_data = False
         self.queue_size = int(
@@ -67,7 +67,7 @@ class GpioRecorder(Monitor):
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
-        self.data["value"].resize((self.position,))
+        self.ds_value.resize((self.position,))
         super().__exit__()
 
     def write(self, data: GPIOTrace) -> None:
@@ -87,13 +87,13 @@ class GpioRecorder(Monitor):
                 if len_new < 1:
                     return
                 pos_end = self.position + len_new
-                data_length = len(self.data["time"])  # a faster .shape[0]
+                data_length = len(self.ds_time)  # a faster .shape[0]
                 if pos_end >= data_length:
                     data_length += max(self.increment_size, pos_end - data_length)
-                    self.data["time"].resize((data_length,))
-                    self.data["value"].resize((data_length,))
-                self.data["time"][self.position : pos_end] = data.timestamps_ns
-                self.data["value"][self.position : pos_end] = data.bitmasks
+                    self.ds_time.resize((data_length,))
+                    self.ds_value.resize((data_length,))
+                self.ds_time[self.position : pos_end] = data.timestamps_ns
+                self.ds_value[self.position : pos_end] = data.bitmasks
                 self.position = pos_end
 
         log.debug("[%s] thread ended itself", type(self).__name__)

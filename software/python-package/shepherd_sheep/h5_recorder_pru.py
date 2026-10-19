@@ -26,7 +26,7 @@ class PruRecorder(Monitor):
             chunk_size=SharedMemUtilOutput.N_SAMPLES_PER_CHUNK,  # 2 s
         )
 
-        self.data.create_dataset(
+        self.ds_values = self.data.create_dataset(
             name="values",
             shape=(self.increment_size, 3),
             dtype="u2",
@@ -34,9 +34,8 @@ class PruRecorder(Monitor):
             chunks=(self.chunk_size, 3),
             compression=compression,
         )
-
-        self.data["values"].attrs["unit"] = "ns, ns, ns"
-        self.data["values"].attrs["description"] = (
+        self.ds_values.attrs["unit"] = "ns, ns, ns"
+        self.ds_values.attrs["description"] = (
             "pru0_vsrc_tsample_mean [ns], "
             "pru0_vsrc_tsample_max [ns], "
             f"pru1_gpio_tsample_max [ns/{commons.SAMPLE_INTERVAL_NS}ns]"
@@ -68,7 +67,7 @@ class PruRecorder(Monitor):
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
-        self.data["values"].resize((self.position, 3))
+        self.ds_values.resize((self.position, 3))
         super().__exit__()
 
     def write(self, data: UtilTrace) -> None:
@@ -90,15 +89,15 @@ class PruRecorder(Monitor):
         if len_new < 1:
             return
         pos_end = self.position + len_new
-        data_length = len(self.data["time"])
+        data_length = len(self.ds_time)
         if pos_end >= data_length:
             data_length += max(self.increment_size, pos_end - data_length)
-            self.data["values"].resize((data_length, 3))
-            self.data["time"].resize((data_length,))
-        self.data["time"][self.position : pos_end] = data.timestamps_ns
-        self.data["values"][self.position : pos_end, 0] = data.pru0_tsample_mean
-        self.data["values"][self.position : pos_end, 1] = data.pru0_tsample_max
-        self.data["values"][self.position : pos_end, 2] = data.pru1_tsample_max
+            self.ds_values.resize((data_length, 3))
+            self.ds_time.resize((data_length,))
+        self.ds_time[self.position : pos_end] = data.timestamps_ns
+        self.ds_values[self.position : pos_end, 0] = data.pru0_tsample_mean
+        self.ds_values[self.position : pos_end, 1] = data.pru0_tsample_max
+        self.ds_values[self.position : pos_end, 2] = data.pru1_tsample_max
         self.position = pos_end
 
     def thread_fn(self) -> None:
@@ -117,9 +116,9 @@ class PruRecorder(Monitor):
         runtime_addition = 30
         datarate_sps = 1.0 / SharedMemUtilOutput.DURATION_SAMPLE_S
         data_length = max(
-            len(self.data["time"]),
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["values"].resize((data_length, 3))
+        self.ds_time.resize((data_length,))
+        self.ds_values.resize((data_length, 3))

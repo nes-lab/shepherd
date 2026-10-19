@@ -19,7 +19,7 @@ class NTPMonitor(Monitor):
         backlog: int = 60,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.99)
-        self.data.create_dataset(
+        self.ds_message = self.data.create_dataset(
             name="message",
             shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=str),
@@ -61,7 +61,7 @@ class NTPMonitor(Monitor):
     ) -> None:
         self.shutdown_thread()
         self.process.terminate()
-        self.data["message"].resize((self.position,))
+        self.ds_message.resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -86,17 +86,17 @@ class NTPMonitor(Monitor):
             line = line[msg_begin:].strip()[:128]
 
             try:
-                data_length = len(self.data["time"])  # a faster .shape[0]
+                data_length = len(self.ds_time)  # a faster .shape[0]
                 if self.position >= data_length:
                     data_length += self.increment_size
-                    self.data["time"].resize((data_length,))
-                    self.data["message"].resize((data_length,))
+                    self.ds_time.resize((data_length,))
+                    self.ds_message.resize((data_length,))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.data["time"][self.position] = time_ns
-                self.data["message"][self.position] = line
+                self.ds_time[self.position] = time_ns
+                self.ds_message[self.position] = line
                 self.position += 1
             except (OSError, KeyError):
                 log.error(
@@ -115,9 +115,9 @@ class NTPMonitor(Monitor):
         runtime_addition = 30
         datarate_sps = 1
         data_length = max(
-            len(self.data["time"]),
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["message"].resize((data_length,))
+        self.ds_time.resize((data_length,))
+        self.ds_message.resize((data_length,))

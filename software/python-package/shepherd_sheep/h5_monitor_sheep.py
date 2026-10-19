@@ -18,22 +18,22 @@ class SheepMonitor(Monitor):
     ) -> None:
         super().__init__(target, compression, poll_interval=0.25)
         self.queue = get_message_queue()
-        self.data.create_dataset(
+        self.ds_message = self.data.create_dataset(
             name="message",
             shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=(self.chunk_size,),
         )
-        self.data.create_dataset(
+        self.ds_level = self.data.create_dataset(
             name="level",
             shape=(self.increment_size,),
             dtype="uint8",
             maxshape=(None,),
             chunks=(self.chunk_size,),
         )
-        self.data["level"].attrs["unit"] = "n"
-        self.data["level"].attrs["description"] = (
+        self.ds_level.attrs["unit"] = "n"
+        self.ds_level.attrs["description"] = (
             "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
         )
 
@@ -53,8 +53,8 @@ class SheepMonitor(Monitor):
     ) -> None:
         time.sleep(2 * self.poll_interval)  # give thread time to write last bits
         self.shutdown_thread()
-        self.data["message"].resize((self.position,))
-        self.data["level"].resize((self.position,))
+        self.ds_message.resize((self.position,))
+        self.ds_level.resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -65,21 +65,21 @@ class SheepMonitor(Monitor):
                 self.event.wait(self.rate_limit_interval)
                 rec = self.queue.get()
                 try:
-                    data_length = len(self.data["time"])  # a faster .shape[0]
+                    data_length = len(self.ds_time)  # a faster .shape[0]
                     if self.position >= data_length:
                         data_length += self.increment_size
-                        self.data["time"].resize((data_length,))
-                        self.data["message"].resize((data_length,))
-                        self.data["level"].resize((data_length,))
+                        self.ds_time.resize((data_length,))
+                        self.ds_message.resize((data_length,))
+                        self.ds_level.resize((data_length,))
                 except RuntimeError:
                     log.error(
                         "[%s] HDF5-File unavailable - will stop",
                         type(self).__name__,
                     )
                     break
-                self.data["time"][self.position] = int(rec.created * 1e9)
-                self.data["message"][self.position] = rec.message
-                self.data["level"][self.position] = rec.levelno
+                self.ds_time[self.position] = int(rec.created * 1e9)
+                self.ds_message[self.position] = rec.message
+                self.ds_level[self.position] = rec.levelno
                 self.position += 1
 
         log.debug("[%s] thread ended itself", type(self).__name__)

@@ -31,7 +31,7 @@ class Monitor(ABC):
 
         # create time, others have to be created in main class
         if "time" not in self.data:
-            self.data.create_dataset(
+            self.ds_time = self.data.create_dataset(
                 name="time",
                 shape=(self.increment_size,),
                 dtype="u8",
@@ -40,10 +40,12 @@ class Monitor(ABC):
                 compression=compression,
                 shuffle=True,
             )
-            self.data["time"].attrs["unit"] = "s"
-            self.data["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
-            self.data["time"].attrs["gain"] = 1e-9
-            self.data["time"].attrs["offset"] = 0
+            self.ds_time.attrs["unit"] = "s"
+            self.ds_time.attrs["description"] = "system time [s] = value * gain + (offset)"
+            self.ds_time.attrs["gain"] = 1e-9
+            self.ds_time.attrs["offset"] = 0
+        else:
+            self.ds_time = self.data["time"]
         log.debug(
             "[%s] Activated (t_poll=%.3fs, chunk_size=%d)",
             type(self).__name__,
@@ -58,12 +60,12 @@ class Monitor(ABC):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.data["time"].resize((self.position,))
-        log_fn = log.info if len(self.data["time"]) > 0 else log.debug
+        self.ds_time.resize((self.position,))
+        log_fn = log.info if len(self.ds_time) > 0 else log.debug
         log_fn(
             "[%s] recorded %d events",
             type(self).__name__,
-            len(self.data["time"]),
+            len(self.ds_time),
         )
 
     def shutdown_thread(self) -> None:

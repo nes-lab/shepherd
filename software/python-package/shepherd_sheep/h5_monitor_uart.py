@@ -23,15 +23,14 @@ class UARTMonitor(Monitor):
         super().__init__(target, compression, poll_interval=0.05)
         self.uart = uart
         self.config = config
-        self.data.create_dataset(
+        self.ds_message = self.data.create_dataset(
             name="message",
             shape=(self.increment_size,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
             chunks=(self.chunk_size,),
-            compression=compression,
         )
-        self.data["message"].attrs["description"] = "raw ascii-bytes"
+        self.ds_message.attrs["description"] = "raw ascii-bytes"
 
         if not isinstance(self.config, UartLogging):
             return
@@ -69,7 +68,7 @@ class UARTMonitor(Monitor):
         extra_arg: int = 0,
     ) -> None:
         self.shutdown_thread()
-        self.data["message"].resize((self.position,))
+        self.ds_message.resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -94,15 +93,15 @@ class UARTMonitor(Monitor):
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
                         if len(output) > 0:
-                            data_length = len(self.data["time"])  # a faster .shape[0]
+                            data_length = len(self.ds_time)  # a faster .shape[0]
                             if self.position >= data_length:
                                 data_length += self.increment_size
-                                self.data["time"].resize((data_length,))
-                                self.data["message"].resize((data_length,))
-                            self.data["time"][self.position] = int(
+                                self.ds_time.resize((data_length,))
+                                self.ds_message.resize((data_length,))
+                            self.ds_time[self.position] = int(
                                 time.time() * 1e9,
                             )
-                            self.data["message"][self.position] = output
+                            self.ds_message[self.position] = output
                             self.position += 1
                     else:
                         self.event.wait(self.poll_interval)

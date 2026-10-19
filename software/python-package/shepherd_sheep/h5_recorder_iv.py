@@ -46,6 +46,9 @@ class IVRecorder(Monitor):
             self.transform_data_reduce if self.reduce else self.transform_data_full
         )
 
+        self.ds_voltage = self.data["voltage"]
+        self.ds_current = self.data["current"]
+
         self.dropped_data = False
         self.queue_size = int(
             80e6 / (SharedMemIVOutput.SIZE_SAMPLE * SharedMemIVOutput.N_SAMPLES_PER_CHUNK)
@@ -71,8 +74,8 @@ class IVRecorder(Monitor):
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
-        self.data["voltage"].resize((self.position,))
-        self.data["current"].resize((self.position,))
+        self.ds_voltage.resize((self.position,))
+        self.ds_current.resize((self.position,))
         super().__exit__()
 
     def write(self, data: IVTrace) -> None:
@@ -134,17 +137,17 @@ class IVRecorder(Monitor):
             else:
                 data = self.transform_data(self.queue.get())
                 pos_end = self.position + len(data)
-                data_length = len(self.data["voltage"])  # faster .shape[0]
+                data_length = len(self.ds_voltage)  # faster .shape[0]
                 if pos_end >= data_length:
                     data_length += self.increment_size
                     # TODO: faster with direct naming? i.e. self.ds_time
-                    self.data["voltage"].resize((data_length,))
-                    self.data["current"].resize((data_length,))
-                    self.data["time"].resize((data_length,))
+                    self.ds_voltage.resize((data_length,))
+                    self.ds_current.resize((data_length,))
+                    self.ds_time.resize((data_length,))
 
-                self.data["voltage"][self.position : pos_end] = data.ds_voltage
-                self.data["current"][self.position : pos_end] = data.ds_current
-                self.data["time"][self.position : pos_end] = data.ds_time
+                self.ds_voltage[self.position : pos_end] = data.ds_voltage
+                self.ds_current[self.position : pos_end] = data.ds_current
+                self.ds_time[self.position : pos_end] = data.ds_time
                 self.position = pos_end
         # TODO: catch OSError - "Failed to write data to HDF5-File - will STOP! error = %s",
         log.debug("[%s] thread ended itself", type(self).__name__)
@@ -158,9 +161,9 @@ class IVRecorder(Monitor):
         had_error = False
         if self.position < 1:
             return had_error
-        gain = self.data["time"].attrs["gain"]
-        file_start = self.data["time"][0] * gain
-        file_end = self.data["time"][self.position - 1] * gain
+        gain = self.ds_time.attrs["gain"]
+        file_start = self.ds_time[0] * gain
+        file_end = self.ds_time[self.position - 1] * gain
         if file_start > t_start:
             log.error("Recorder missed %.3f s IVTrace after start", file_start - t_start)
             had_error = True
@@ -176,10 +179,10 @@ class IVRecorder(Monitor):
         runtime_addition = 0
         datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
         data_length = max(
-            len(self.data["time"]),
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["voltage"].resize((data_length,))
-        self.data["current"].resize((data_length,))
+        self.ds_time.resize((data_length,))
+        self.ds_voltage.resize((data_length,))
+        self.ds_current.resize((data_length,))

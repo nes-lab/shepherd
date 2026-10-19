@@ -74,7 +74,7 @@ class PowerRecorder(Monitor):
                 self.transform_data_float_full if self.use_float else self.transform_data_int_full
             )
 
-        self.data.create_dataset(
+        self.ds_value = self.data.create_dataset(
             name="value",
             shape=(self.increment_size,),
             dtype="u4",
@@ -83,10 +83,10 @@ class PowerRecorder(Monitor):
             compression=compression,
             shuffle=True,
         )
-        self.data["value"].attrs["unit"] = "W"
-        self.data["value"].attrs["description"] = "Power [W] = value/nW * gain + (offset)"
-        self.data["value"].attrs["gain"] = self.gain
-        self.data["value"].attrs["offset"] = 0
+        self.ds_value.attrs["unit"] = "W"
+        self.ds_value.attrs["description"] = "Power [W] = value/nW * gain + (offset)"
+        self.ds_value.attrs["gain"] = self.gain
+        self.ds_value.attrs["offset"] = 0
 
         self.dropped_data = False
         self.queue_size = int(
@@ -113,7 +113,7 @@ class PowerRecorder(Monitor):
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
-        self.data["value"].resize((self.position,))
+        self.ds_value.resize((self.position,))
         super().__exit__()
 
     def write(self, data: IVTrace) -> None:
@@ -213,13 +213,13 @@ class PowerRecorder(Monitor):
             else:
                 ds_time, ds_pwr = self.transform_data(self.queue.get())
                 pos_end = self.position + len(ds_time)
-                data_length = len(self.data["time"])
+                data_length = len(self.ds_time)
                 if pos_end >= data_length:
                     data_length += self.increment_size
-                    self.data["time"].resize((data_length,))
-                    self.data["value"].resize((data_length,))
-                self.data["time"][self.position : pos_end] = ds_time
-                self.data["value"][self.position : pos_end] = ds_pwr
+                    self.ds_time.resize((data_length,))
+                    self.ds_value.resize((data_length,))
+                self.ds_time[self.position : pos_end] = ds_time
+                self.ds_value[self.position : pos_end] = ds_pwr
                 self.position = pos_end
         log.debug("[%s] thread ended itself", type(self).__name__)
 
@@ -231,9 +231,9 @@ class PowerRecorder(Monitor):
         had_error = False
         if self.position < 1:
             return had_error
-        gain = self.data["time"].attrs["gain"]
-        file_start = self.data["time"][0] * gain
-        file_end = self.data["time"][self.position - 1] * gain
+        gain = self.ds_time.attrs["gain"]
+        file_start = self.ds_time[0] * gain
+        file_end = self.ds_time[self.position - 1] * gain
         if file_start > t_start:
             log.error("Recorder missed %.3f s IVTrace after start", file_start - t_start)
             had_error = True
@@ -249,9 +249,9 @@ class PowerRecorder(Monitor):
         runtime_addition = 0
         datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
         data_length = max(
-            len(self.data["time"]),
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["value"].resize((data_length,))
+        self.ds_time.resize((data_length,))
+        self.ds_value.resize((data_length,))
