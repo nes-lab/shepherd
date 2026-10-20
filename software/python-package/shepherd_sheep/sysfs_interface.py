@@ -6,8 +6,9 @@ provided by the shepherd kernel module
 
 """
 
+import contextlib
+import os
 import time
-from collections.abc import Generator
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -55,6 +56,44 @@ def flatten_list(dl: list) -> list:
             return flatten_list(dl[0]) + flatten_list(dl[1:])
         return [dl[0], *flatten_list(dl[1:])]
     return [dl]
+
+
+class SysfsReader:
+    """Keeps a sysfs-file open and re-reads it after seeking to offset 0.
+
+    Saves open() & close() (& python file-object) per call - relevant for main loops.
+    sysfs.rst: "If userspace seeks back to zero or does a pread(2) with an offset of '0'
+    the show() method will be called again, rearmed, to fill the buffer."
+    NOTE: lseek() + read() instead of pread() as pyfakefs only fakes the former.
+    A stale descriptor (i.e. after reloading the kernel module -> ENODEV)
+    gets dropped and the file is reopened.
+
+    Benchmark says 15x faster than path.open() & read
+    """
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        self.fd: int | None = None
+        self._os = os  # module that opened fd, as pyfakefs swaps 'os' during tests
+
+    def close(self) -> None:
+        if self.fd is not None:
+            with contextlib.suppress(OSError):
+                self._os.close(self.fd)
+            self.fd = None
+
+    def read(self) -> str:
+        if self.fd is not None and self._os is not os:
+            self.close()
+        elif self.fd is not None:
+            try:
+                os.lseek(self.fd, 0, os.SEEK_SET)
+                return os.read(self.fd, 4096).decode("utf-8").rstrip()
+            except OSError:
+                self.close()  # stale -> reopen below
+        self._os = os
+        self.fd = os.open(self.path, os.O_RDONLY)
+        return os.read(self.fd, 4096).decode("utf-8").rstrip()
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> float:
@@ -542,39 +581,14 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
-def read_pru_msg_generator() -> Generator[tuple[int, list[int]] | None, None, None]:
-    """Faster access with generator due to usage in main loops."""
-    path = Path("/sys/shepherd/pru_msg_outbox")
-    while True:
-        try:
-            with path.open(encoding="utf-8") as f:
-                while f.readable():
-                    f.seek(0)
-                    message = f.read().rstrip()
-                    msg_parts = [int(x) for x in message.split()]
-                    if len(msg_parts) < 2:
-                        yield None
-                    yield msg_parts[0], msg_parts[1:]
-        except OSError:  # noqa: PERF203
-            # pytest causes 'OError: [Errno 19] No such device'
-            continue
-
-
-read_pru_msg_iter = read_pru_msg_generator()
-
-
-def read_pru_msg_fast() -> tuple[int, list[int]] | None:
-    """11x Faster access with iterator due to usage in main loops."""
-    return next(read_pru_msg_iter)
+_reader_pru_msg = SysfsReader("/sys/shepherd/pru_msg_outbox")
 
 
 def read_pru_msg() -> tuple[int, list[int]] | None:
-    with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
-        message = f.read().rstrip()
-        msg_parts = [int(x) for x in message.split()]
-        if len(msg_parts) < 2:
-            return None
-        return msg_parts[0], msg_parts[1:]
+    msg_parts = [int(x) for x in _reader_pru_msg.read().split()]
+    if len(msg_parts) < 2:
+        return None
+    return msg_parts[0], msg_parts[1:]
 
 
 prog_attribs = [
@@ -804,35 +818,11 @@ def get_mode() -> str:
         return str(f.read().rstrip())
 
 
-def get_state_generator() -> Generator[str, None, None]:
-    """Faster access with generator due to usage in main loops."""
-    path = Path("/sys/shepherd/state")
-    while True:
-        if not path.exists():
-            # TODO: does not fix UnsupportedOperation('fileno')
-            time.sleep(0.1)
-            continue
-        try:
-            with path.open(encoding="utf-8") as f:
-                while path.exists() and f.readable():
-                    f.seek(0)
-                    yield str(f.read().rstrip())
-        except OSError:
-            # pytest causes 'OError: [Errno 19] No such device'
-            continue
-
-
-get_state_iter = get_state_generator()
-
-
-def get_state_fast() -> str:
-    """11x Faster access with iterator due to usage in main loops."""
-    return next(get_state_iter)
+_reader_state = SysfsReader("/sys/shepherd/state")
 
 
 def get_state() -> str:
-    with Path("/sys/shepherd/state").open(encoding="utf-8") as f:
-        return str(f.read().rstrip())
+    return _reader_state.read()
 
 
 def get_trace_iv_inp_address() -> int:

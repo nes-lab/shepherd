@@ -3,9 +3,10 @@ The FNs called during main-loop should be optimized!
 - generators / iterator are 10x faster
 
 Benchmark results 2026-10-01
-        read_pru_msg_v1() = 0.512 s for 1000 reps
-        next(pru_msg_v2) = 0.046 s for 1000 reps
-        read_pru_msg_now() = 0.048 s for 1000 reps
+        read_pru_msg_v1() = 0.568 s for 1000 reps
+        next(pru_msg_v2) = 0.049 s for 1000 reps
+        next(pru_msg_v3) = 0.050 s for 1000 reps
+        read_pru_msg_now() = 0.038 s for 1000 reps
 """
 
 import time
