@@ -81,7 +81,7 @@ class SharedMemIVOutput:
             self.N_BUFFER_CHUNKS,
         )
 
-        self._generate_chunk_views()
+        self._generate_data_views()
 
         self.fill_level: float = 0
         self.fill_last: float = 0
@@ -106,8 +106,8 @@ class SharedMemIVOutput:
     ) -> None:
         self.check_canary()
 
-    def _generate_chunk_views(self) -> None:
-        self.chunks: list[IVTrace] = []
+    def _generate_data_views(self) -> None:
+        self._mem_chunks: list[IVTrace] = []
         for _iter in range(self.N_BUFFER_CHUNKS):
             _index = _iter * self.N_SAMPLES_PER_CHUNK
             chunk = IVTrace(
@@ -130,24 +130,34 @@ class SharedMemIVOutput:
                     offset=self._offset_timestamps + _index * 8,
                 ),
             )
-            self.chunks.append(chunk)
+            self._mem_chunks.append(chunk)
+
+        # this replaces .seek() & .unpack()
+        self._mem_canary = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_canary,
+        )
+        self._mem_index_pru = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_idx_pru,
+        )
 
     def check_canary(self) -> None:
-        self._mm.seek(self._offset_canary)
-        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
-        if canary != commons.CANARY_VALUE_U32:
+        if self._mem_canary[0] != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
-                f"It is 0x{canary:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
+                f"It is 0x{self._mem_canary[0]:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
             )
             raise BufferError(msg)
 
     def get_size_available(self) -> int:
-        # determine current state
+        """Determine current state."""
         # TODO: add mode to wait blocking?
-        self._mm.seek(self._offset_idx_pru)
-        index_pru = self.ST_U32.unpack(self._mm.read(4))[0]
-        avail_length = (index_pru - self.index_next) % self.N_SAMPLES
+        avail_length = (int(self._mem_index_pru[0]) - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
         if (self.fill_level <= 0.5 - self.FILL_GAP) and (self.fill_last >= 0.5 + self.FILL_GAP):
@@ -177,7 +187,7 @@ class SharedMemIVOutput:
                 type(self).__name__,
             )
 
-        chunk_data = self.chunks[self.index_next // self.N_SAMPLES_PER_CHUNK]
+        chunk_data = self._mem_chunks[self.index_next // self.N_SAMPLES_PER_CHUNK]
         chunk_ts_start = int(chunk_data.ds_time[0])
         chunk_ts_end = int(chunk_data.ds_time[-1])
 

@@ -135,6 +135,8 @@ class SharedMemIVInput:
             self.n_buffer_chunks,
         )
 
+        self._generate_data_views()
+
         self.fill_level: float = 0
         self.fill_last: float = 0
 
@@ -155,21 +157,39 @@ class SharedMemIVInput:
     ) -> None:
         self.check_canary()
 
+    def _generate_data_views(self) -> None:
+        # this replaces .seek() & .unpack()
+        self._mem_canary = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_canary,
+        )
+        self._mem_index_pru = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_idx_pru,
+        )
+        self._mem_index_sys = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_idx_sys,
+        )
+
     def check_canary(self) -> None:
-        self._mm.seek(self._offset_canary)
-        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
-        if canary != commons.CANARY_VALUE_U32:
+        if self._mem_canary[0] != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
-                f"It is 0x{canary:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
+                f"It is 0x{self._mem_canary[0]:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
             )
             raise BufferError(msg)
 
     def get_size_available(self) -> int:
         if self.index_next is None:
             return min(self.N_SAMPLES, self.n_samples_per_chunk)
-        self._mm.seek(self._offset_idx_pru)
-        index_pru: int = self.ST_U32.unpack(self._mm.read(4))[0]
+        index_pru = int(self._mem_index_pru[0])
         if index_pru > self.N_SAMPLES:
             # still out-of-bound (u32_max)
             index_pru = self.N_SAMPLES - 1
@@ -220,21 +240,23 @@ class SharedMemIVInput:
             iv_data = data.reshape((len_data, 2), order="C")
 
         # Seek buffer location in memory and skip header
+        iv_data = np.ascontiguousarray(iv_data)
+        offset = self._offset_samples + self.index_next * self.SIZE_SAMPLE
         if self.index_next + len_data <= self.N_SAMPLES:
-            self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
-            self._mm.write(iv_data.tobytes())
+            self._mm[offset : offset + iv_data.nbytes] = iv_data
+            # slice-assignment avoids the extra copy of .tobytes() (also mm.seek & mm.write)
         else:
             cut_position = self.N_SAMPLES - self.index_next
-            self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
-            self._mm.write(iv_data[:cut_position].tobytes())
+            data_a = iv_data[:cut_position]
+            self._mm[offset : offset + data_a.nbytes] = data_a
             if len(iv_data[:cut_position]) + len(iv_data[cut_position:]) > len(iv_data):
                 msg = (
                     f"NUMPY specific error "
                     f"{len(iv_data[:cut_position])}, {len(iv_data[cut_position:])}, {len(iv_data)}"
                 )
                 raise ValueError(msg)
-            self._mm.seek(self._offset_samples)
-            self._mm.write(iv_data[cut_position:].tobytes())
+            data_b = iv_data[cut_position:]
+            self._mm[self._offset_samples : self._offset_samples + data_b.nbytes] = data_b
 
         if verbose:
             log.debug(
@@ -246,9 +268,9 @@ class SharedMemIVInput:
             )
         # update sys-index
         self.index_next = (self.index_next + len(data)) % self.N_SAMPLES
-        self._mm.seek(self._offset_idx_sys)
-        self._mm.write(self.ST_U32.pack(self.index_next))
-
+        self._mem_index_sys[0] = self.index_next
+        # NOTE: array-OP replaces mm.seek() & write(.ST_U32.pack(idx)) -> untested
+        # TODO: sys-index does not seem to be checked? not writing it causes no error
         if self.index_next < self.n_samples_per_chunk:  # once a cycle
             self.check_canary()
 

@@ -27,6 +27,7 @@ class IVRecorder(Monitor):
             chunk_size=10_000,
             # NOTE: was SharedMemIVOutput.N_SAMPLES_PER_CHUNK, but hope to lower large nw-bursts
             #       the smaller chunksize will give a small performance hit (~1%-point cpu-util)
+            # TODO: this is a test - if it does not help -> revert (in _power too)
         )
         reductions_supported = [
             commons.SAMPLE_RATE_DEFAULT_SPS // rate for rate in samplerates_supported
@@ -144,7 +145,6 @@ class IVRecorder(Monitor):
             else:
                 data = self.transform_data(self.queue.get())
                 pos_end = self.position + len(data)
-                self.ds_size = len(self.ds_time)
                 if pos_end >= self.ds_size:
                     self.ds_size += self.increment_size
                     self.ds_voltage.resize((self.ds_size,))
