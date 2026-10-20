@@ -225,7 +225,7 @@ static void ocmc_cache_update(void)
     if ((idx_read != cache_block_idx_tail) && (cache_block_fill_lvl > 0u))
     {
         cache_block_fill_lvl -= ocmc_cache_remove(cache_block_idx_tail);
-        if (cache_block_idx_tail++ >= BUFFER_BLOCKS_N) { cache_block_idx_tail = 0u; }
+        if (++cache_block_idx_tail >= BUFFER_BLOCKS_N) { cache_block_idx_tail = 0u; }
     }
 
     /* is cache full? */
