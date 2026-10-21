@@ -261,7 +261,7 @@ Learnings for the user:
 | EMU uart datarate=230400 | 84          | 100         | 99.7         | 0.225        | high load |
 | EMU uart datarate=460800 | 33          | 100         | 98.9         | 0.249        | high load |
 
-### adaptive read-length
+### adaptive read-length - might have missed data
 
 | Type                     | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |
 |--------------------------|-------------|-------------|--------------|--------------|------|
@@ -279,71 +279,103 @@ Learnings for the user:
 | EMU uart datarate=230400 | 27          | 73          | 65.0         | 0.225        |      |
 | EMU uart datarate=460800 | 58          | 80          | 70.0         | 0.249        |      |
 
-## 2026-10-19 - local sd-card, dev-version, finalized tuning
+## tune input-path
 
-Biggest improvements come from changes in handling of hdf5-files.
+### baseline
 
 | Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note       |
-| ------------------------------- | ----------- | ----------- | ------------ | ------------ | ---------- |
-| EMU optimized ShpInput ivtrace  | 29          | 48          | 40.6         | 0.478        |            |
-| EMU optimized ShpInput notrace  | 7           | 34          | 18.5         | 0.001        |            |
-| EMU optimized hrvformat ivtrace | 24          | 46          | 38.5         | 0.478        |            |
-| EMU optimized hrvformat notrace | 9           | 29          | 18.1         | 0.001        |            |
-| EMU optimized ShpInput ivtrace  | 26          | 57          | 43.4         | 0.479        |            |
-| EMU optimized ShpInput notrace  | 5           | 40          | 20.0         | 0.001        |            |
-| EMU optimized hrvformat ivtrace | 18          | 63          | 41.9         | 0.478        |            |
-| EMU optimized hrvformat notrace | 8           | 38          | 18.6         | 0.001        | incomplete |
-| EMU gpio datarate=57600         | 14          | 46          | 38.8         | 0.288        |            |
-| EMU gpio datarate=115200        | 33          | 57          | 43.5         | 0.372        |            |
-| EMU gpio datarate=230400        | 34          | 66          | 50.4         | 0.519        |            |
-| EMU gpio datarate=460800        | 34          | 76          | 63.7         | 0.769        |            |
-| EMU gpio datarate=921600        | 36          | 95          | 80.9         | 1.128        |            |
-| EMU gpio datarate=1000000       | 42          | 100         | 84.4         | 1.222        |            |
-| EMU uart datarate=57600         | 52          | 67          | 60.3         | 0.206        |            |
-| EMU uart datarate=115200        | 20          | 76          | 61.8         | 0.219        |            |
-| EMU uart datarate=230400        | 25          | 73          | 64.7         | 0.224        |            |
-| EMU uart datarate=460800        | 36          | 78          | 68.2         | 0.250        |            |
-| EMU input-option=native+static  | 27          | 46          | 38.6         | 0.201        |            |
-| EMU input-option=native+random  | 33          | 52          | 45.6         | 0.479        |            |
-| EMU input-option=scaled+static  | 27          | 42          | 35.8         | 0.200        |            |
-| EMU input-option=scaled+random  | 27          | 53          | 42.2         | 0.479        |            |
-| EMU t_offset=20                 | 30          | 65          | 46.3         | 0.479        |            |
-| EMU t_offset=25                 | 31          | 61          | 47.2         | 0.478        |            |
-| EMU t_offset=30                 | 12          | 64          | 47.2         | 0.478        |            |
-| EMU t_offset=35                 | 31          | 57          | 46.0         | 0.478        |            |
-| EMU power @ samplerate=10       | 20          | 48          | 33.5         | 0.001        |            |
-| EMU power @ samplerate=100      | 13          | 43          | 33.0         | 0.002        |            |
-| EMU power @ samplerate=1000     | 21          | 37          | 32.4         | 0.005        |            |
-| EMU power @ samplerate=10000    | 20          | 43          | 34.4         | 0.040        |            |
-| EMU power @ samplerate=100000   | 29          | 50          | 43.6         | 0.360        |            |
-| EMU iv @ samplerate=10          | 19          | 38          | 30.8         | 0.001        |            |
-| EMU iv @ samplerate=100         | 19          | 36          | 31.3         | 0.002        |            |
-| EMU iv @ samplerate=1000        | 19          | 38          | 31.6         | 0.006        |            |
-| EMU iv @ samplerate=10000       | 21          | 42          | 33.4         | 0.050        |            |
-| EMU iv @ samplerate=100000      | 32          | 53          | 44.9         | 0.478        |            |
-| EMU output-compression=None     | 23          | 51          | 35.7         | 1.528        |            |
-| EMU output-compression=lzf      | 31          | 53          | 45.2         | 0.478        |            |
-| EMU output-compression=1        | 33          | 55          | 47.5         | 0.408        |            |
-| EMU input-compression=None      | 32          | 55          | 45.0         | 0.478        |            |
-| EMU input-compression=lzf       | 33          | 52          | 45.2         | 0.478        |            |
-| EMU input-compression=1         | 31          | 55          | 46.9         | 0.478        |            |
-| HRV t_offset=15                 | 21          | 72          | 27.4         | 0.094        | had errors |
-| HRV t_offset=20                 | 20          | 30          | 25.9         | 0.114        |            |
-| HRV t_offset=25                 | 18          | 30          | 25.4         | 0.093        |            |
-| HRV t_offset=30                 | 20          | 32          | 26.1         | 0.097        |            |
-| HRV power & samplerate=10       | 10          | 28          | 18.2         | 0.001        |            |
-| HRV power & samplerate=100      | 11          | 32          | 18.3         | 0.001        |            |
-| HRV power & samplerate=1000     | 10          | 30          | 18.6         | 0.001        |            |
-| HRV power & samplerate=10000    | 16          | 24          | 19.8         | 0.005        |            |
-| HRV power & samplerate=100000   | 22          | 34          | 26.2         | 0.028        |            |
-| HRV iv & samplerate=10          | 14          | 24          | 16.8         | 0.001        |            |
-| HRV iv & samplerate=100         | 10          | 32          | 17.2         | 0.001        |            |
-| HRV iv & samplerate=1000        | 14          | 26          | 17.6         | 0.002        |            |
-| HRV iv & samplerate=10000       | 14          | 30          | 19.1         | 0.009        |            |
-| HRV iv & samplerate=100000      | 21          | 31          | 25.6         | 0.113        |            |
-| HRV compression=None            | 17          | 28          | 21.5         | 1.527        |            |
-| HRV compression=lzf             | 19          | 26          | 22.6         | 0.162        |            |
-| HRV compression=1               | 19          | 30          | 25.2         | 0.096        |            |
+|---------------------------------|-------------|-------------|--------------|--------------|------------|
+| EMU optimized ShpInput ivtrace  | 27          | 48          | 40.7         | 0.478        |            |
+| EMU optimized ShpInput notrace  | 10          | 26          | 18.4         | 0.001        |            |
+| EMU optimized hrvformat ivtrace | 22          | 52          | 39.1         | 0.478        |            |
+| EMU optimized hrvformat notrace | 9           | 34          | 18.3         | 0.001        |            |
+
+### avoid copies
+
+| Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |
+|---------------------------------|-------------|-------------|--------------|--------------|------|
+| EMU optimized ShpInput ivtrace  | 24          | 47          | 35.6         | 0.479        |      |
+| EMU optimized ShpInput notrace  | 5           | 20          | 13.1         | 0.001        |      |
+| EMU optimized hrvformat ivtrace | 9           | 51          | 35.4         | 0.478        |      |
+| EMU optimized hrvformat notrace | 5           | 24          | 11.7         | 0.001        |      |
+
+### slower polling in kMod
+
+| Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |
+|---------------------------------|-------------|-------------|--------------|--------------|------|
+| EMU optimized ShpInput ivtrace  | 25          | 40          | 33.1         | 0.479        |      |
+| EMU optimized ShpInput notrace  | 6           | 29          | 12.8         | 0.001        |      |
+| EMU optimized hrvformat ivtrace | 19          | 38          | 31.9         | 0.479        |      |
+| EMU optimized hrvformat notrace | 4           | 22          | 11.5         | 0.001        |      |
+
+## 2026-10-20 - local sd-card, dev-version, finalized tuning
+
+Biggest improvements come from
+
+- multiple changes in handling of hdf5-files (less relying on h5-metadata)
+- reduce copies, more dataviews around the mem-buffers
+- slower polling in kMod
+
+| Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |
+|---------------------------------|-------------|-------------|--------------|--------------|------|
+| EMU optimized ShpInput ivtrace  | 12          | 42          | 33.5         | 0.479        |      |
+| EMU optimized ShpInput notrace  | 6           | 24          | 13.0         | 0.001        |      |
+| EMU optimized hrvformat ivtrace | 20          | 39          | 32.5         | 0.479        |      |
+| EMU optimized hrvformat notrace | 7           | 19          | 12.4         | 0.001        |      |
+| EMU gpio datarate=57600         | 22          | 37          | 30.8         | 0.288        |      |
+| EMU gpio datarate=115200        | 19          | 41          | 33.9         | 0.372        |      |
+| EMU gpio datarate=230400        | 6           | 47          | 40.8         | 0.519        |      |
+| EMU gpio datarate=460800        | 14          | 60          | 51.9         | 0.767        |      |
+| EMU gpio datarate=921600        | 10          | 76          | 68.3         | 1.132        |      |
+| EMU gpio datarate=1000000       | 12          | 80          | 71.7         | 1.219        |      |
+| EMU uart datarate=57600         | 12          | 54          | 47.1         | 0.207        |      |
+| EMU uart datarate=115200        | 47          | 58          | 53.0         | 0.220        |      |
+| EMU uart datarate=230400        | 10          | 63          | 56.4         | 0.226        |      |
+| EMU uart datarate=460800        | 8           | 68          | 58.1         | 0.251        |      |
+| EMU input-option=native+static  | 7           | 37          | 30.1         | 0.201        |      |
+| EMU input-option=native+random  | 25          | 51          | 37.2         | 0.479        |      |
+| EMU input-option=scaled+static  | 21          | 33          | 27.0         | 0.200        |      |
+| EMU input-option=scaled+random  | 11          | 52          | 34.5         | 0.479        |      |
+| EMU t_offset=20                 | 27          | 44          | 37.1         | 0.479        |      |
+| EMU t_offset=25                 | 20          | 46          | 36.4         | 0.479        |      |
+| EMU t_offset=30                 | 23          | 47          | 36.8         | 0.479        |      |
+| EMU t_offset=35                 | 11          | 43          | 36.6         | 0.479        |      |
+| EMU power @ samplerate=10       | 15          | 32          | 24.9         | 0.001        |      |
+| EMU power @ samplerate=100      | 14          | 35          | 25.0         | 0.002        |      |
+| EMU power @ samplerate=1000     | 15          | 35          | 24.8         | 0.005        |      |
+| EMU power @ samplerate=10000    | 14          | 37          | 26.3         | 0.041        |      |
+| EMU power @ samplerate=100000   | 22          | 44          | 36.0         | 0.373        |      |
+| EMU iv @ samplerate=10          | 12          | 30          | 23.1         | 0.001        |      |
+| EMU iv @ samplerate=100         | 11          | 34          | 23.5         | 0.002        |      |
+| EMU iv @ samplerate=1000        | 10          | 39          | 23.3         | 0.006        |      |
+| EMU iv @ samplerate=10000       | 16          | 33          | 25.9         | 0.050        |      |
+| EMU iv @ samplerate=100000      | 24          | 46          | 36.6         | 0.479        |      |
+| EMU output-compression=None     | 15          | 38          | 27.8         | 1.528        |      |
+| EMU output-compression=lzf      | 19          | 44          | 36.5         | 0.479        |      |
+| EMU output-compression=1        | 26          | 46          | 39.4         | 0.408        |      |
+| EMU output-compression=6        | 19          | 61          | 50.8         | 0.388        |      |
+| EMU input-compression=None      | 9           | 44          | 36.6         | 0.479        |      |
+| EMU input-compression=lzf       | 25          | 46          | 36.8         | 0.479        |      |
+| EMU input-compression=1         | 12          | 46          | 38.5         | 0.479        |      |
+| EMU input-compression=6         | 26          | 47          | 39.0         | 0.479        |      |
+| HRV t_offset=15                 | 16          | 60          | 22.8         | 0.097        |      |
+| HRV t_offset=20                 | 8           | 26          | 21.4         | 0.096        |      |
+| HRV t_offset=25                 | 7           | 26          | 21.6         | 0.098        |      |
+| HRV t_offset=30                 | 17          | 27          | 21.8         | 0.096        |      |
+| HRV power & samplerate=10       | 11          | 24          | 15.3         | 0.001        |      |
+| HRV power & samplerate=100      | 11          | 27          | 15.2         | 0.001        |      |
+| HRV power & samplerate=1000     | 10          | 23          | 15.2         | 0.001        |      |
+| HRV power & samplerate=10000    | 13          | 28          | 16.2         | 0.005        |      |
+| HRV power & samplerate=100000   | 17          | 28          | 22.4         | 0.040        |      |
+| HRV iv & samplerate=10          | 9           | 24          | 13.6         | 0.001        |      |
+| HRV iv & samplerate=100         | 10          | 18          | 13.6         | 0.001        |      |
+| HRV iv & samplerate=1000        | 10          | 25          | 13.9         | 0.002        |      |
+| HRV iv & samplerate=10000       | 12          | 23          | 16.0         | 0.009        |      |
+| HRV iv & samplerate=100000      | 9           | 27          | 21.6         | 0.098        |      |
+| HRV compression=None            | 14          | 24          | 17.7         | 1.527        |      |
+| HRV compression=lzf             | 14          | 29          | 18.5         | 0.144        |      |
+| HRV compression=1               | 10          | 29          | 22.4         | 0.116        |      |
+| HRV compression=6               | 8           | 33          | 25.4         | 0.082        |      |
 
 ## 2026-10-15 - Testbed, NAS
 

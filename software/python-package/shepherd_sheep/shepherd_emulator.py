@@ -423,7 +423,7 @@ class ShepherdEmulator(ShepherdIO):
                 "Failed to write data to HDF5-File - will STOP! error = %s",
                 _xpt,
             )
-        # prog_bar.close()
+        prog_bar.close()
         if self.writer is not None:
             # Detect recorder missing start / end
             self.writer.rec_iv.check_dataset(self.start_time, ts_end)

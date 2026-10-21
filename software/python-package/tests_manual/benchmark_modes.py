@@ -143,7 +143,7 @@ def bench_hrv_sweep_samplerate_poweronly() -> None:
 
 
 def bench_hrv_sweep_compression() -> None:
-    for _compression in [Compression.null, Compression.lzf, Compression.gzip1]:  # gzip6
+    for _compression in [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]:
         title = f"HRV compression={_compression.value}"
         path_output = path_storage / f"hrv_compression{_compression.value}.h5"
         if not path_output.exists():
@@ -287,7 +287,7 @@ def bench_emu_sweep_samplerate_poweronly() -> None:
 
 def bench_emu_sweep_output_compression() -> None:
     path_input = generate_shepherd_file(Compression.lzf, random=True)  # Worst Case!
-    for _compression in [Compression.null, Compression.lzf, Compression.gzip1]:  # gzip6
+    for _compression in [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]:
         title = f"EMU output-compression={_compression.value}"
         path_output = path_storage / f"emu_output_compression{_compression.value}.h5"
         if not path_output.exists():
@@ -310,7 +310,7 @@ def bench_emu_sweep_output_compression() -> None:
 
 
 def bench_emu_sweep_input_compression() -> None:
-    for _compression in [Compression.null, Compression.lzf, Compression.gzip1]:  # gzip6
+    for _compression in [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]:
         title = f"EMU input-compression={_compression.value}"
         path_output = path_storage / f"emu_input_compression{_compression.value}.h5"
         if not path_output.exists():
