@@ -42,7 +42,7 @@ static const unsigned int TIMER_STEPS_NS[] = {20000000u, 20000000u, 20000000u, 2
 /* TODO: sleep 100ms - 20 us
 * TODO: above halvings sum up to 98870 us */
 static const size_t       TIMER_STEPS_NS_SIZE = sizeof(TIMER_STEPS_NS) / sizeof(TIMER_STEPS_NS[0]);
-static uint32_t           trigger_early_ns    = 10000u; // 10us
+//static uint32_t           trigger_early_ns    = 10000u; // 10us
 
 static uint32_t           info_count          = 6666u; /* >6k triggers explanation-message once */
 struct sync_data_s        sync_state;
@@ -381,21 +381,31 @@ int sync_PID_correction(struct ProtoMsg *const sync_reply, const struct ProtoMsg
 
     /* adjust PI-Tuning once stable */
     // TODO: slow down state-changes, also try holding ki - phase-changes stay in recent versions
-    if ((sync_state.input_smooth < 1000000) && (sync_state.k_state == 0))
+    if ((sync_state.k_state == 0) && (sync_state.input_smooth < 1000000))
     {
         sync_state.kp_inv_n10 *= 2;
         sync_state.ki_inv_n10 *= 2;
         sync_state.k_state++;
         printk(KERN_INFO "shprd.sync: error BELOW 1ms -> relax PI-tuning");
     }
-    else if ((sync_state.input_smooth < 200000) && (sync_state.k_state == 1))
+    else if ((sync_state.k_state == 1) && (sync_state.input_smooth < 200000))
     {
         sync_state.kp_inv_n10 *= 2;
         sync_state.ki_inv_n10 *= 2;
         sync_state.k_state++;
         printk(KERN_INFO "shprd.sync: error BELOW 200us -> relax PI-tuning");
     }
-    else if ((sync_state.input_smooth > 2000000) && (sync_state.k_state > 0))
+    else if ((sync_state.k_state == 2) && (sync_state.input_smooth < 20000))
+    {
+        sync_state.k_state++;
+        printk(KERN_INFO "shprd.sync: error BELOW 20us");
+    }
+    else if ((sync_state.k_state == 3) && (sync_state.input_smooth < 1000))
+    {
+        sync_state.k_state++;
+        printk(KERN_INFO "shprd.sync: error BELOW 1us");
+    }
+    else if ((sync_state.k_state > 0) && (sync_state.input_smooth > 2000000))
     {
         sync_state.kp_inv_n10 = kp_inv_n10_init;
         sync_state.ki_inv_n10 = ki_inv_n10_init;
