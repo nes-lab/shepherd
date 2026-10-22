@@ -255,6 +255,7 @@ class Writer(CoreWriter):
         if sys is not None and sys.kernel:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.time_sync:
+            # TODO: remove one of the two versions (log vs data)
             self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
             self.monitors.append(PTPLogMonitor(self.ptp_log_grp, self._compression))
             self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))

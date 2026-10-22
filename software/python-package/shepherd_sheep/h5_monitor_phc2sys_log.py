@@ -37,6 +37,7 @@ class PHC2SYSLogMonitor(Monitor):
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]  # for client
+        # TODO: switch to json (see kernel-monitor) to receive priority & warnings
         self.process = subprocess.Popen(  # noqa: S603
             command,
             stdout=subprocess.PIPE,
@@ -100,6 +101,7 @@ class PHC2SYSLogMonitor(Monitor):
                 self.ds_time[self.position] = time_ns
                 self.ds_message[self.position] = line
                 self.position += 1
+                # TODO: lots of potential here -> batch writes (collect for 1..10 s)
             except OSError:
                 log.error(
                     "[%s] Caught a Write Error for Line: [%s] %s",
