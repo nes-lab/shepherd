@@ -84,7 +84,10 @@ class SysfsReader:
 
     def read(self) -> str:
         if self.fd is not None and self._os is not os:
-            self.close()
+            # mainly for unit-testing
+            # os changed, so self.close() is not our concern
+            if not Path(self.path).exists():
+                raise FileNotFoundError
         elif self.fd is not None:
             try:
                 os.lseek(self.fd, 0, os.SEEK_SET)
@@ -550,6 +553,10 @@ def check_pru_applied_settings() -> bool:
     return success == "1"
 
 
+path_pru_inbox = Path("/sys/shepherd/pru_msg_inbox")
+# TODO: gets used a lot during vsource-tests -> add Writer
+
+
 def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: PYI041
     """
     :param msg_type:
@@ -577,7 +584,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
             )
             raise SysfsInterfaceError(msg)
 
-    with Path("/sys/shepherd/pru_msg_inbox").open("w", encoding="utf-8") as file:
+    with path_pru_inbox.open("w", encoding="utf-8") as file:
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
