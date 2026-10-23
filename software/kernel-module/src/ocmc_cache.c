@@ -34,7 +34,6 @@ static struct hrtimer         update_timer;
 
 int ocmc_cache_init(void)
 {
-    const uint64_t ts_now = ktime_get_real();
     if (init_done)
     {
         printk(KERN_ERR "shprd.cache: ocmc-cache init requested -> can't init twice!");
@@ -85,15 +84,16 @@ int ocmc_cache_init(void)
 
     /* timer for updates */
     hrtimer_setup(&update_timer, &update_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    hrtimer_start(&update_timer, ts_now + DELAY_TIMER, HRTIMER_MODE_ABS);
-
     init_done = 1u;
+    ocmc_cache_start();
+
     printk(KERN_INFO "shprd.cache: -> %u cache-blocks with %u ivsamples each for %u us",
            CACHE_BLOCKS_N, CACHE_BLOCK_SAMPLES_N,
            CACHE_BLOCK_SAMPLES_N * SAMPLE_INTERVAL_NS / 1000u);
 
-    printk(KERN_INFO "shprd.cache:     input-buffer  @ 0x%X, size = %d bytes",
-           (uint32_t) shared_mem->buffer_iv_inp_ptr, shared_mem->buffer_iv_inp_size);
+    printk(KERN_INFO "shprd.cache:     input-buffer  @ 0x%X, size = %d bytes, blocks = %d",
+           (uint32_t) shared_mem->buffer_iv_inp_ptr, shared_mem->buffer_iv_inp_size,
+           BUFFER_BLOCKS_N);
     /* small plausability-check */
     if (shared_mem->buffer_iv_inp_size != sizeof(struct IVTraceInp))
     {
@@ -144,6 +144,25 @@ void ocmc_cache_reset(void)
     memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_U32_FLAGS_N);
     error_detected = 0u;
 }
+
+void ocmc_cache_start(void)
+{
+    if (init_done != 1u) return;
+    const uint64_t ts_now = ktime_get_real();
+    ocmc_cache_reset();
+    hrtimer_start(&update_timer, ts_now + DELAY_TIMER, HRTIMER_MODE_ABS);
+    printk(KERN_INFO "shprd.cache: update-service is started");
+    init_done = 2u;
+}
+
+void ocmc_cache_pause(void)
+{
+    if (init_done != 2u) return;
+    hrtimer_cancel(&update_timer);
+    printk(KERN_INFO "shprd.cache: update-service is paused");
+    init_done = 1u;
+}
+
 
 static uint32_t ocmc_cache_add(uint32_t block_idx)
 {
@@ -242,7 +261,7 @@ static void ocmc_cache_update(void)
     }
 
     /* report out-of-bound read-index ONCE */
-    if ((error_detected == 0u) && (idx_read < BUFFER_BLOCKS_N) &&
+    if ((error_detected <= 10u) && (idx_read < BUFFER_BLOCKS_N) &&
         (cache_block_idx_tail < BUFFER_BLOCKS_N) && (cache_block_idx_head < BUFFER_BLOCKS_N))
     {
         if (cache_block_idx_head >= cache_block_idx_tail)
@@ -252,7 +271,7 @@ static void ocmc_cache_update(void)
             {
                 printk(KERN_ERR "shprd.cache: pru index (read block %d) outside of cache [%d, %d] ",
                        idx_read, cache_block_idx_tail, cache_block_idx_head);
-                error_detected = 1u;
+                error_detected++;
             }
         }
         else
@@ -260,9 +279,10 @@ static void ocmc_cache_update(void)
             /* head wrapped, tail not */
             if ((idx_read < cache_block_idx_tail) && (idx_read > cache_block_idx_head))
             {
-                printk(KERN_ERR "shprd.cache: pru index (read block %d) outside of cache [%d, %d] ",
+                printk(KERN_ERR "shprd.cache: pru index (read block %d) outside of headwrapped "
+                                "cache [%d, %d] ",
                        idx_read, cache_block_idx_tail, cache_block_idx_head);
-                error_detected = 1u;
+                error_detected++;
             }
         }
     }

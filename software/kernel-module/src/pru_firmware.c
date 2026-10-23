@@ -3,6 +3,7 @@
 #include <linux/string.h>
 #include <linux/types.h>
 
+#include "ocmc_cache.h"
 #include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
 #include "pru_sync_control.h"
@@ -32,6 +33,7 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
     /* pause sub-services */
     if (init_done)
     {
+        ocmc_cache_pause();
         msg_sys_pause();
         sync_pause();
     }
@@ -84,6 +86,7 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
         /* restart sub-services */
         mem_interface_reset();
         msg_sys_start();
+        ocmc_cache_start();
 
         /* Initialize synchronization mechanism between PRU1 and our clock */
         //if ((fwncmp(0, PRU0_FW_DEFAULT) == 0) && (fwncmp(1, PRU1_FW_DEFAULT) == 0))
