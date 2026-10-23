@@ -134,3 +134,4 @@ class NTPMonitor(Monitor):
         )
         self.ds_time.resize((self.ds_size,))
         self.ds_message.resize((self.ds_size,))
+        self.ds_priority.resize((self.ds_size,))
