@@ -2,11 +2,9 @@ import os
 import subprocess
 import threading
 from datetime import datetime
-from datetime import timedelta
 from types import TracebackType
 
 import h5py
-from shepherd_core.data_models.base.timezone import local_now
 from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .h5_monitor_abc import Monitor
@@ -30,7 +28,6 @@ class PTPMonitor(Monitor):
         )
         self.ds_values.attrs["unit"] = "ns, Hz, ns"
         self.ds_values.attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
-        timestamp_backlog = local_now() - timedelta(seconds=10)
 
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -40,7 +37,8 @@ class PTPMonitor(Monitor):
             f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
-            f"--since='{timestamp_backlog.isoformat(sep=' ')[:19]}'",
+            "--since=-10s",
+            "--utc",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603
             command,
