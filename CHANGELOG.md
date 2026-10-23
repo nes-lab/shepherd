@@ -39,7 +39,12 @@ Sheep
 - derive info about supported samplerates from core-lib
 - reduce chunk-size of power-tracers (to hopefully reduce the large writeburst)
 - teach pytest to respect small tmpfs-partition (cleanup between tests)
-- improve error-logging - dmesg, ptp, ntp, phc2sys now record the priority-level and relay everything above warning-level to sheep
+- improve error-logging
+  - dmesg, PTP, ntp, PHC2SYS now record the priority-level and relay everything above warning-level to sheep
+  - double monitors for each PHC2SYS & PTP were fused in one
+  - monitors for PHC2SYS & PTP warn about too high sync-offset or sync-compensation (now 50 us / 5 MHz, was 500 us, 50 MHz)
+  - backlog is limited to 10 entries; was 60 and resulted in stale errors getting re-mentioned
+- rate-limit the initial buffer fill to avoid network-congestion on testbed
 
 Watchdog
 
@@ -88,6 +93,7 @@ Kernel-Update 6.1 - Main Improvements:
 - OCMC - fix out of bound access bug
 - SYNC - small improvements
 - Sync - give more info about current sync-state
+- OCMC - is now paused, restarted & reset when PRU-firmware is changed
 
 Kernel-Update 6.1 - Downsides:
 
