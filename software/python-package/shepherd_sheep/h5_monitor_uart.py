@@ -21,17 +21,28 @@ class UARTMonitor(Monitor):
         uart: str = "/dev/ttyS1",
     ) -> None:
         super().__init__(target, compression, poll_interval=0.05)
+        if self.poll_interval > (64_000 * 8 / 460_800) / 10:
+            log.error(
+                "[%s] poll interval is > 10x of expected flip buffer",
+                type(self).__name__,
+            )
+            return
+        """
+        - tty flip buffer should be 64 kiB
+        - at 460 kBaud (max of the interface) with full throughput that's roughly >= 1 s
+        - to be safe the interval will be 1/10 of that
+        """
+
         self.uart = uart
         self.config = config
-        self.data.create_dataset(
+        self.ds_message = self.data.create_dataset(
             name="message",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
             chunks=(self.chunk_size,),
-            compression=compression,
         )
-        self.data["message"].attrs["description"] = "raw ascii-bytes"
+        self.ds_message.attrs["description"] = "raw ascii-bytes"
 
         if not isinstance(self.config, UartLogging):
             return
@@ -69,7 +80,7 @@ class UARTMonitor(Monitor):
         extra_arg: int = 0,
     ) -> None:
         self.shutdown_thread()
-        self.data["message"].resize((self.position,))
+        self.ds_message.resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -94,18 +105,14 @@ class UARTMonitor(Monitor):
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
                         if len(output) > 0:
-                            data_length = len(self.data["time"])  # a faster .shape[0]
-                            if self.position >= data_length:
-                                data_length += self.increment_size
-                                self.data["time"].resize((data_length,))
-                                self.data["message"].resize((data_length,))
-                            self.data["time"][self.position] = int(
-                                time.time() * 1e9,
-                            )
-                            self.data["message"][self.position] = output
+                            if self.position >= self.ds_size:
+                                self.ds_size += self.increment_size
+                                self.ds_time.resize((self.ds_size,))
+                                self.ds_message.resize((self.ds_size,))
+                            self.ds_time[self.position] = int(time.time() * 1e9)
+                            self.ds_message[self.position] = output
                             self.position += 1
-                    else:
-                        self.event.wait(self.poll_interval)
+                    self.event.wait(self.poll_interval)
 
         except RuntimeError:
             log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)

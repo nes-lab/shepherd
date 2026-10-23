@@ -5,6 +5,7 @@ from types import TracebackType
 
 import h5py
 import numpy as np
+from shepherd_core.data_models.experiment.observer_features import samplerates_supported
 
 from . import commons
 from .h5_monitor_abc import Monitor
@@ -22,10 +23,16 @@ class IVRecorder(Monitor):
         super().__init__(
             target,
             poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
-            chunk_size=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
-            # NOTE: was 10 x CHUNK/REDUCTION_FACTOR, BUT performance was worse!
+            increment_factor=20,
+            chunk_size=10_000,
+            # NOTE: was SharedMemIVOutput.N_SAMPLES_PER_CHUNK, but hope to lower large nw-bursts
+            #       the smaller chunksize will give a small performance hit (~1%-point cpu-util)
+            # TODO: this is a test - if it does not help -> revert (in _power too)
         )
-        if reduction_factor not in [1, 10, 100, 1_000, 10_000]:
+        reductions_supported = [
+            commons.SAMPLE_RATE_DEFAULT_SPS // rate for rate in samplerates_supported
+        ]
+        if reduction_factor not in reductions_supported:
             raise ValueError("reduction-factor must be 10^n, n=[0..4]")
         # this monitor won't create its own datasets
         self.reduction_factor: int = reduction_factor
@@ -41,6 +48,14 @@ class IVRecorder(Monitor):
         self.transform_data = (
             self.transform_data_reduce if self.reduce else self.transform_data_full
         )
+
+        self.ds_voltage = self.data["voltage"]
+        self.ds_current = self.data["current"]
+
+        # as we take in external existing date, we have to condition it
+        self.ds_voltage.resize((self.ds_size,))
+        self.ds_current.resize((self.ds_size,))
+        self.ds_time.resize((self.ds_size,))
 
         self.dropped_data = False
         self.queue_size = int(
@@ -67,8 +82,8 @@ class IVRecorder(Monitor):
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
-        self.data["voltage"].resize((self.position,))
-        self.data["current"].resize((self.position,))
+        self.ds_voltage.resize((self.position,))
+        self.ds_current.resize((self.position,))
         super().__exit__()
 
     def write(self, data: IVTrace) -> None:
@@ -130,17 +145,15 @@ class IVRecorder(Monitor):
             else:
                 data = self.transform_data(self.queue.get())
                 pos_end = self.position + len(data)
-                data_length = len(self.data["voltage"])  # faster .shape[0]
-                if pos_end >= data_length:
-                    data_length += self.increment_size
-                    # TODO: faster with direct naming? i.e. self.ds_time
-                    self.data["voltage"].resize((data_length,))
-                    self.data["current"].resize((data_length,))
-                    self.data["time"].resize((data_length,))
+                if pos_end >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_voltage.resize((self.ds_size,))
+                    self.ds_current.resize((self.ds_size,))
+                    self.ds_time.resize((self.ds_size,))
 
-                self.data["voltage"][self.position : pos_end] = data.ds_voltage
-                self.data["current"][self.position : pos_end] = data.ds_current
-                self.data["time"][self.position : pos_end] = data.ds_time
+                self.ds_voltage[self.position : pos_end] = data.ds_voltage
+                self.ds_current[self.position : pos_end] = data.ds_current
+                self.ds_time[self.position : pos_end] = data.ds_time
                 self.position = pos_end
         # TODO: catch OSError - "Failed to write data to HDF5-File - will STOP! error = %s",
         log.debug("[%s] thread ended itself", type(self).__name__)
@@ -154,9 +167,9 @@ class IVRecorder(Monitor):
         had_error = False
         if self.position < 1:
             return had_error
-        gain = self.data["time"].attrs["gain"]
-        file_start = self.data["time"][0] * gain
-        file_end = self.data["time"][self.position - 1] * gain
+        gain = self.ds_time.attrs["gain"]
+        file_start = self.ds_time[0] * gain
+        file_end = self.ds_time[self.position - 1] * gain
         if file_start > t_start:
             log.error("Recorder missed %.3f s IVTrace after start", file_start - t_start)
             had_error = True
@@ -171,11 +184,11 @@ class IVRecorder(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 0
         datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
-        data_length = max(
-            len(self.data["time"]),
+        self.ds_size = max(
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["voltage"].resize((data_length,))
-        self.data["current"].resize((data_length,))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_voltage.resize((self.ds_size,))
+        self.ds_current.resize((self.ds_size,))

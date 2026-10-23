@@ -43,6 +43,7 @@ Previous description is still correct, in detail:
   - model-parameters like voc and isc for solar (higher rate than iv-curves)
 
 - emulation handles harvested energy-traces or harvests directly from the iv-curves and simulates a customizable converter-stage
+
 - power-stage has already predefined templates for several setups
 
   - direct throughput of traces
@@ -51,6 +52,7 @@ Previous description is still correct, in detail:
   - buck-converter (BQ25504)
 
 - the design enables users to automate testing of harvesting-setups e.g. by sweeping through parameters like storage-cap-size
+
 - the emulator and harvester consist of a purpose-fully chosen combination of low-noise and high-speed DACs, ADCs and Instrumentation-Amplifiers
 
   - both circuits can handle 0 - 4.2 V (hrv even 5.0V) with up to 50 mA current
@@ -70,10 +72,8 @@ Previous description is still correct, in detail:
   - partly bidirectional, switchable
   - relatively stable 4.03 MHz, min: 602 kHz, max: 4.55 MHz
   - previously ~ 160 - 1500 kHz, with 6 GPIO
-
 - watchdog to handle hangups during unsupervised operation (and wakeups for saving power)
 - screw-in power-socket or type-c connector
-
 
 ### Currently under development
 
@@ -90,7 +90,6 @@ Previous description is still correct, in detail:
 - ~~kernel 4.19 currently works (but has flaws) -> latest updates to 5.10 break kernel-module & pru
 - chip-shortage is limiting our supply - 2 ICs only 15 left, current restock date mid '23
 
-
 ## Features in Detail
 
 - disclaimer: graphs and stats are partly outdated
@@ -100,10 +99,9 @@ Previous description is still correct, in detail:
 
 in [](../user/hardware)
 
-
 #### Shepherd Cape v2.4
 
-- chip shortage forced us to a ultra fine pitch (350 um) -  risky and hard to hand-solder
+- chip shortage forced us to a ultra fine pitch (350 um) - risky and hard to hand-solder
 - 360 components, 55 unique - > tedious, but ok to hand-solder
 - switch to 6 layer due to higher gpio-count
 - 1 Free Pin left on BBone
@@ -112,13 +110,11 @@ in [](../user/hardware)
 
 ![shpcape24](../media_recap/cape_v24b_pcb_preview.png)
 
-
 #### nRF52 FRAM Target v1.0
 
 - Target with MSP430 (FRAM) & nRF52 on one PCB
 
 ![nrf52msp430target1](../media_recap/target_nRF_FRAM_v1.0_front_with_header.jpg)
-
 
 ### Harvester Circuit
 
@@ -142,13 +138,11 @@ in [](../user/hardware)
 
 ![hrv_profiled](../media_recap/profile_quiver_offset_sheep0_cape_v230c1_profile_76_short_hrv_redone_base_hrv.png)
 
-
 ### Virtual Harvester
 
 - either harvest right away (MPPT, constant voltage) -> iv-stream
 - or defer the harvesting by sampling ivsurface / curves (or isc & voc)
 - configurable by 10 parameters
-
 
 Implemented harvest-algorithms (& parameters)
 
@@ -178,10 +172,9 @@ Implemented harvest-algorithms (& parameters)
 
 ![emu_profiled](../media_recap/profile_quiver_offset_sheep0_cape_v230c1_profile_07_short_C6_increased_1uF_emu_a.png)
 
-
 ### Virtual Source
 
-#### General  Features
+#### General Features
 
 - integrated into PRU, calculated and updated at 100 kHz
 - fully customizable per yaml-parameter-set (29+ parameters)
@@ -189,7 +182,6 @@ Implemented harvest-algorithms (& parameters)
   - predefined sets by name ie. "virtsource: BQ25504s" for the BQ-Regulator with additional schmitt-trigger for pwr-good
   - neutral parameter-set is base -> direct throughput
   - inherit from existing parameter-sets -> only add altered parameters in new set
-
 - emulator can either record output or intermediate voltage (storage cap)
 - naming: source = harvester + converter
 - design enables users to automate testing of harvesting-setup e.g. by sweeping through parameters like storage-cap-size
@@ -267,7 +259,7 @@ GPIO Implementation
 
 #### Sampling frequency of gpio-monitor
 
-- legacy	   -> 160 kHz … up to 1.5 … 2.9 MHz
+- legacy -> 160 kHz … up to 1.5 … 2.9 MHz
 - intermediate -> relatively stable 4.03 MHz, min: 602 kHz, max: 4.55 MHz
 - current code … tbd
 

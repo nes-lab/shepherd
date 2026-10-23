@@ -67,7 +67,6 @@ We provide a playbook (`deploy/setup-dev-nfs.yml`) to conveniently configure an 
 After mounting the share on the BeagleBone, you can compile and install the corresponding software component remotely over ssh on the BeagleBone while editing the code locally on your machine.
 Or you use the playbook described in [](#option-1).
 
-
 ## Build the docs
 
 **Note**: Docs are automatically built with GitHub actions after changes on main-branch.

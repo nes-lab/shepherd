@@ -57,7 +57,9 @@ path_storage = Path("/var/shepherd/recordings")
 path_firmware = Path(__file__).parent / "firmwares"
 skip_hrv = False
 
-log.info("| %s | cpu_min | cpu_max | cpu_mean | MiB/s | note |", "type".ljust(34))
+log.info(
+    "| %s | CPU_min [%%] | CPU_max [%%] | CPU_mean [%%] | File [MiB/s] | Note |", "Type".ljust(34)
+)
 log.info("|------------------------------------|---------|---------|----------|-------|------|")
 
 
@@ -101,7 +103,7 @@ def calculate_stats(file: Path, title: str) -> None:
 
 
 def bench_hrv_sweep_starttime() -> None:
-    for _offset in range(10, 30, 5):
+    for _offset in range(15, 35, 5):
         title = f"HRV t_offset={_offset}"
         path_output = path_storage / f"hrv_toffset{_offset}.h5"
         if not path_output.exists():
@@ -120,7 +122,7 @@ def bench_hrv_sweep_starttime() -> None:
 
 def bench_hrv_sweep_samplerate_poweronly() -> None:
     for _power_only in [True, False]:
-        for _samplerate in [10, 100, 1_000, 100_000]:
+        for _samplerate in [10, 100, 1_000, 10_000, 100_000]:
             _pwr_add = "power" if _power_only else "iv"
             title = f"HRV {_pwr_add} & samplerate={_samplerate}"
             path_output = path_storage / f"hrv_{_pwr_add}_samplerate{_samplerate}.h5"
@@ -141,7 +143,7 @@ def bench_hrv_sweep_samplerate_poweronly() -> None:
 
 
 def bench_hrv_sweep_compression() -> None:
-    for _compression in [Compression.null, Compression.lzf, Compression.gzip1]:  # gzip6
+    for _compression in [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]:
         title = f"HRV compression={_compression.value}"
         path_output = path_storage / f"hrv_compression{_compression.value}.h5"
         if not path_output.exists():
@@ -233,7 +235,7 @@ def generate_harvest_file(
 
 def bench_emu_sweep_starttime() -> None:
     path_input = generate_shepherd_file(Compression.lzf, random=True)  # Worst Case!
-    for _offset in range(15, 35, 5):
+    for _offset in range(20, 40, 5):
         title = f"EMU t_offset={_offset}"
         path_output = path_storage / f"emu_toffset{_offset}.h5"
         if not path_output.exists():
@@ -258,12 +260,12 @@ def bench_emu_sweep_starttime() -> None:
 def bench_emu_sweep_samplerate_poweronly() -> None:
     path_input = generate_shepherd_file(Compression.lzf, random=True)  # Worst Case!
     for _power_only in [True, False]:
-        for _samplerate in [10, 100, 1_000, 100_000]:
-            _pwr_add = "power" if _power_only else "iv"
-            title = f"EMU {_pwr_add} & samplerate={_samplerate}"
+        for _samplerate in [10, 100, 1_000, 10_000, 100_000]:
+            _pwr_add = "Power" if _power_only else "IV"
+            title = f"EMU {_pwr_add} @ samplerate={_samplerate}"
             path_output = path_storage / f"emu_{_pwr_add}_samplerate{_samplerate}.h5"
             if not path_output.exists():
-                time_start = int(time.time() + 25)
+                time_start = int(time.time() + 30)
                 power_tracer = PowerTracing(only_power=_power_only, samplerate=_samplerate)
                 cfg = EmulationTask(
                     input_path=path_input,
@@ -285,11 +287,11 @@ def bench_emu_sweep_samplerate_poweronly() -> None:
 
 def bench_emu_sweep_output_compression() -> None:
     path_input = generate_shepherd_file(Compression.lzf, random=True)  # Worst Case!
-    for _compression in [Compression.null, Compression.lzf, Compression.gzip1]:  # gzip6
+    for _compression in [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]:
         title = f"EMU output-compression={_compression.value}"
         path_output = path_storage / f"emu_output_compression{_compression.value}.h5"
         if not path_output.exists():
-            time_start = int(time.time() + 25)
+            time_start = int(time.time() + 30)
             cfg = EmulationTask(
                 input_path=path_input,
                 output_path=path_output,
@@ -308,12 +310,12 @@ def bench_emu_sweep_output_compression() -> None:
 
 
 def bench_emu_sweep_input_compression() -> None:
-    for _compression in [Compression.null, Compression.lzf, Compression.gzip1]:  # gzip6
+    for _compression in [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]:
         title = f"EMU input-compression={_compression.value}"
         path_output = path_storage / f"emu_input_compression{_compression.value}.h5"
         if not path_output.exists():
             path_input = generate_shepherd_file(_compression, random=True)
-            time_start = int(time.time() + 25)
+            time_start = int(time.time() + 30)
             cfg = EmulationTask(
                 input_path=path_input,
                 output_path=path_output,
@@ -340,7 +342,7 @@ def bench_emu_sweep_input_options() -> None:
             path_output = path_storage / f"emu_input-option_{_scaled_add}+{_random_add}.h5"
             if not path_output.exists():
                 path_input = generate_shepherd_file(Compression.lzf, random=_random, scaled=_scaled)
-                time_start = int(time.time() + 25)
+                time_start = int(time.time() + 30)
                 cfg = EmulationTask(
                     input_path=path_input,
                     output_path=path_output,
@@ -359,16 +361,18 @@ def bench_emu_sweep_input_options() -> None:
 
 
 def bench_emu_sweep_datarates() -> None:
-    for _rate in [
-        57_600,  # ~ 37 kSPS, +4% util
-        115_200,  # ~ 72 kSPS, +11% util
-        230_400,  # ~ 145 kSPS, +23% util -> edgy
-        460_800,  # ~ 267 kSPS, +43% util
-        921_600,  # ~ 450 kSPS
-        1_000_000,  # ~ 500 kSPS,
-    ]:  # ,  460_800, 921_600, 1_000_000]:
-        for _type in ["gpio"]:  # "uart",
-            title = f"EMU {_type} datarate{_rate}"
+    for _type in ["GPIO", "Uart"]:
+        for _rate in [
+            57_600,  # ~ 37 kSPS, +4% util
+            115_200,  # ~ 72 kSPS, +11% util
+            230_400,  # ~ 145 kSPS, +23% util -> edgy
+            460_800,  # ~ 267 kSPS, +43% util
+            921_600,  # ~ 450 kSPS
+            1_000_000,  # ~ 500 kSPS,
+        ]:
+            if _type == "Uart" and _rate > 500_000:
+                continue
+            title = f"EMU {_type} baudrate={_rate}"
             path_output = path_storage / f"emu_{_type}_rate_{_rate}.h5"
             if not path_output.exists():
                 path_input = path_firmware / f"build_{_rate}.hex"
@@ -383,7 +387,7 @@ def bench_emu_sweep_datarates() -> None:
                 run_programmer(cfg)
                 generate_harvest_file(random=False)
                 path_input = generate_shepherd_file(Compression.lzf, random=False, scaled=True)
-                time_start = int(time.time() + 25)
+                time_start = int(time.time() + 30)
                 cfg = EmulationTask(
                     input_path=path_input,
                     output_path=path_output,
@@ -391,8 +395,8 @@ def bench_emu_sweep_datarates() -> None:
                     use_cal_default=True,
                     time_start=time_start,
                     virtual_source=VirtualSourceConfig(name="neutral"),
-                    uart_logging=UartLogging(baudrate=_rate) if _type == "uart" else None,
-                    gpio_tracing=GpioTracing() if _type == "gpio" else None,
+                    uart_logging=UartLogging(baudrate=_rate) if _type == "Uart" else None,
+                    gpio_tracing=GpioTracing() if _type == "GPIO" else None,
                     io_port=TargetPort.A,
                     pwr_port=TargetPort.A,
                     enable_io=True,
@@ -410,7 +414,7 @@ def bench_emu_debug_log() -> None:
         path_output = path_storage / f"emu_debug_{_type}.h5"
         if not path_output.exists():
             path_input = generate_harvest_file(random=True)
-            time_start = int(time.time() + 25)
+            time_start = int(time.time() + 30)
             cfg = EmulationTask(
                 input_path=path_input,
                 output_path=path_output,
@@ -432,11 +436,11 @@ def bench_emu_debug_log() -> None:
 
 def bench_emu_optimized_hrvformat() -> None:
     for _type in ["ivtrace", "notrace"]:
-        title = f"EMU optimized hrvformat {_type}"
+        title = f"EMU IV opt hrvformat {_type}"
         path_output = path_storage / f"emu_optimized_hrvformat_{_type}.h5"
         if not path_output.exists():
             path_input = generate_harvest_file(random=True)
-            time_start = int(time.time() + 25)
+            time_start = int(time.time() + 30)
             cfg = EmulationTask(
                 input_path=path_input,
                 output_path=path_output,
@@ -457,14 +461,14 @@ def bench_emu_optimized_hrvformat() -> None:
 
 def bench_emu_optimized() -> None:
     for _type in ["ivtrace", "notrace"]:
-        title = f"EMU optimized ShpInput {_type}"
+        title = f"EMU IV opt ShpInput {_type}"
         path_output = path_storage / f"emu_optimized_{_type}.h5"
         if not path_output.exists():
             path_input = generate_shepherd_file(
                 compression=Compression.lzf, random=True, scaled=True
             )
             # ⤷ optimization: preshaped, scaled, lzf-compressed
-            time_start = int(time.time() + 25)
+            time_start = int(time.time() + 30)
             # ⤷ optimization:
             cfg = EmulationTask(
                 input_path=path_input,
@@ -491,11 +495,13 @@ if __name__ == "__main__":
     bench_emu_optimized_hrvformat()
 
     bench_emu_sweep_datarates()
-    bench_emu_sweep_input_options()
-    bench_emu_sweep_starttime()
     bench_emu_sweep_samplerate_poweronly()
+
     bench_emu_sweep_output_compression()
     bench_emu_sweep_input_compression()
+
+    bench_emu_sweep_input_options()
+    bench_emu_sweep_starttime()
 
     if skip_hrv:
         sys.exit(0)

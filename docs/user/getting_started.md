@@ -8,11 +8,11 @@ To set up an instance of shepherd, you'll need to assemble a number of shepherd 
 
 For each node, you'll need:
 
-* BeagleBone (Green/Black)
-* shepherd cape
+- BeagleBone (Green/Black)
+- shepherd cape
 
-  * for recording: harvesting transducer, e.g. solar cell
-  * for emulation: target board
+  - for recording: harvesting transducer, e.g. solar cell
+  - for emulation: target board
 
 In addition, you'll need at least one SD-card with at least 4GB capacity. To setup linux and control the nodes a linux host-machine is recommended, but the terminal in macOS or WSL on Windows should work as well.
 
@@ -131,7 +131,6 @@ Further playbooks:
 - `setup-dev-nfs.yml` establish a local network file system `/opt/shepherd-dev` for the nodes to access
 - `setup-ext-storage.yml` will format and automount sd-card to `/var/shepherd/recordings`
 - `dev_rebuild_sw.yml` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart
-
 
 ## Installation - ready-to-use image
 

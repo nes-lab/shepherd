@@ -1,5 +1,6 @@
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
+#include <linux/printk.h>
 
 #include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
@@ -31,8 +32,8 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
     else
     {
         if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
-        /* fire warning - maybe not the best place to do this - could start an avalanche */
-        printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
+        /* fire warning - rate-limited, as this could start an avalanche */
+        printk_ratelimited(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
     //mutex_unlock(&buf->mutex);
 }
@@ -62,9 +63,10 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 static u8                   timers_active          = 0u;
 static u8                   init_done              = 0u;
 static u8                   pipelines_passed       = 0u;
-/* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
-static const unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
-                                                      50000u,  20000u,  10000u};
+/* series of halving sleep cycles, polls fast after activity and slows down to 2 ms when idle
+ * NOTE: idle-period was 500 us -> 2 kHz of polling, even without running PRUs */
+static const unsigned int   coord_timer_steps_ns[] = {2000000u, 1000000u, 500000u, 200000u,
+                                                      100000u,  50000u,   20000u,  10000u};
 static const size_t         coord_timer_steps_ns_size =
         sizeof(coord_timer_steps_ns) / sizeof(coord_timer_steps_ns[0]);
 
@@ -169,7 +171,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 {
     struct ProtoMsg pru_msg;
     static uint32_t step_pos       = 0;
-    const uint32_t  canary_wrap    = 240000u; // ~ 2 min
+    const uint32_t  canary_wrap    = 60000u; // ~ 2 min with 2 ms idle-periods
     static uint32_t canary_counter = canary_wrap;
     uint8_t         had_work;
     uint32_t        iter;
@@ -203,39 +205,43 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             {
                 // NOTE: all MSG_ERR also get handed to python
                 case MSG_ERR_INVLD_CMD:
-                    printk(KERN_ERR "shprd.pru%u: pru received invalid cmd, type = %u",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR "shprd.pru%u: pru received invalid cmd, type = %u",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_MEM_CORRUPTION:
-                    printk(KERN_ERR "shprd.pru%u: msg.id from kernel is faulty -> mem "
-                                    "corruption? (val=%u)",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR "shprd.pru%u: msg.id from kernel is faulty -> mem "
+                                                "corruption? (val=%u)",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_BACKPRESSURE:
-                    printk(KERN_ERR "shprd.pru%u: msg-buffer to kernel was still full "
-                                    "-> backpressure (val=%u)",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR "shprd.pru%u: msg-buffer to kernel was still full "
+                                                "-> backpressure (val=%u)",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_TIMESTAMP:
-                    printk(KERN_ERR "shprd.pru%u: received timestamp is faulty (val=%u)",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR
+                                       "shprd.pru%u: received timestamp is faulty (val=%u)",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_CANARY:
-                    printk(KERN_ERR "shprd.pru%u: detected a dead canary (val=%u)", had_work & 1u,
-                           pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR "shprd.pru%u: detected a dead canary (val=%u)",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_SYNC_STATE_NOT_IDLE:
-                    printk(KERN_ERR "shprd.pru%u: Sync not idle at host interrupt (val=%u)",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR
+                                       "shprd.pru%u: Sync not idle at host interrupt (val=%u)",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_VALUE:
-                    printk(KERN_ERR "shprd.pru%u: content of msg failed test (val=%u)",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk_ratelimited(KERN_ERR "shprd.pru%u: content of msg failed test (val=%u)",
+                                       had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_ADC_NOT_FOUND:
-                    printk(KERN_ERR "shprd.pru%u: failed to read back from ADC -> is cape powered? "
-                                    "(pin=%u, value=%u)",
-                           had_work & 1u, pru_msg.value[0], pru_msg.value[1]);
+                    printk_ratelimited(
+                            KERN_ERR
+                            "shprd.pru%u: failed to read back from ADC -> is cape powered? "
+                            "(pin=%u, value=%u)",
+                            had_work & 1u, pru_msg.value[0], pru_msg.value[1]);
                     break;
                 case MSG_ERR_SAMPLE_MODE: break;
                 case MSG_ERR_HRV_ALGO: break;
@@ -253,9 +259,10 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     break;
                 default:
                     /* these are all handled in userspace and will be passed by sys-fs */
-                    printk(KERN_ERR "shprd.k: received invalid command / msg-type = 0x%02X "
-                                    "from pru%u",
-                           pru_msg.type, had_work & 1u);
+                    printk_ratelimited(KERN_ERR
+                                       "shprd.k: received invalid command / msg-type = 0x%02X "
+                                       "from pru%u",
+                                       pru_msg.type, had_work & 1u);
             }
         }
 

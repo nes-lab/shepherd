@@ -75,7 +75,6 @@ sudo /opt/u-boot/bb-u-boot-am335x-evm/install.sh
 ip address
 ```
 
-
 ## Distribution to other nodes
 
 - burn image to other SD-cards

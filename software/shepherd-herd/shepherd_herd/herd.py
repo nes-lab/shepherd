@@ -248,7 +248,8 @@ class Herd:
                 results[hostname] = cnx.sudo(cmd, warn=True, hide=True)
             else:
                 results[hostname] = cnx.run(cmd, warn=True, hide=True)
-        except (NoValidConnectionsError, SSHException, TimeoutError):
+        except (NoValidConnectionsError, SSHException, TimeoutError, ConnectionResetError):
+            # TODO: TimeoutError & ConnectionsResetError are OSError -> simplify?
             log.error(
                 "[%s] failed to run '%s' -> will exclude node from inventory",
                 cnx.host,  # IP
@@ -632,7 +633,7 @@ class Herd:
             self.put_file(
                 task,
                 remote_path,
-                timeout=30,
+                timeout=40,
                 force_overwrite=True,
             )
 
@@ -806,7 +807,7 @@ class Herd:
         return exit_code
 
     def reboot(self) -> int:
-        replies = self.run_cmd(sudo=True, cmd="reboot", timeout=20)
+        replies = self.run_cmd(sudo=True, cmd="reboot", timeout=30)
         log.info("Command for rebooting nodes was issued")
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
@@ -815,7 +816,7 @@ class Herd:
         log.debug("Shepherd-nodes affected: %s", list(self.hostnames.values()))
         if restart:
             return self.reboot()
-        replies = self.run_cmd(sudo=True, cmd="poweroff", timeout=20)
+        replies = self.run_cmd(sudo=True, cmd="poweroff", timeout=30)
         log.info("Command for powering off nodes was issued")
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
@@ -882,7 +883,7 @@ class Herd:
     def resync(self) -> int:
         """Get current time via ntp and restart PTP on each sheep."""
         command = "shepherd-sheep --verbose resync --timeout=120"
-        ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
+        ret = self.run_cmd(sudo=True, cmd=command, timeout=140)
         self.print_output(ret, verbose=True)
         return max([abs(reply.exited) for reply in ret.values()])
 

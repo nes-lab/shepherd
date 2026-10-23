@@ -11,7 +11,6 @@ Each **shepherd** observer consists of a single-board computer (SBC), the **shep
 
 Shepherd works in two key modes: [](#harvester) and [](#emulator).
 
-
 ## Time-synchronization
 
 Generally, shepherd can be used on a single observer or without time-synchronization, for example, to measure the amount of energy that can be harvested in a particular scenario.
@@ -85,6 +84,6 @@ For convenient debugging and development, shepherd implements a fully functional
 SWD is supported by most recent ARM Cortex-M and allows flashing images and debugging the execution of code.
 Older platforms typically provide a serial bootloader, which can be used to flash images over the pre-mentioned UART connection. The same approach should work for JTAG.
 
-```{note}
+```text {note}
 The openOCD-method was officially deprecated and deactivated, but with a bit of tinkering it can be installed and used.
 ```

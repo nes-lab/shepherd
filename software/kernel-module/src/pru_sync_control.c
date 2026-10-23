@@ -3,6 +3,7 @@
 #include <linux/io.h> /* gpio0-access */
 #include <linux/ktime.h>
 #include <linux/math64.h>
+#include <linux/printk.h>
 #include <linux/slab.h> /* kmalloc */
 
 #include "_shared_mem.h"
@@ -14,8 +15,8 @@
 
 #define U32T_MAX (0xFFFFFFFFu)
 static uint32_t               sys_ts_over_wrap_ns = U32T_MAX;
-static uint64_t               ts_upcoming_ns      = 0;
-static uint64_t               ts_previous_ns      = 0; /* for plausibility-check */
+static uint64_t               ts_upcoming_ns      = 0u;
+static uint64_t               ts_previous_ns      = 0u; /* for plausibility-check */
 
 static enum hrtimer_restart   trigger_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart   sync_callback(struct hrtimer *timer_for_restart);
@@ -41,11 +42,11 @@ static const unsigned int TIMER_STEPS_NS[] = {20000000u, 20000000u, 20000000u, 2
 /* TODO: sleep 100ms - 20 us
 * TODO: above halvings sum up to 98870 us */
 static const size_t       TIMER_STEPS_NS_SIZE = sizeof(TIMER_STEPS_NS) / sizeof(TIMER_STEPS_NS[0]);
-//static unsigned int step_pos = 0;
+//static uint32_t           trigger_early_ns    = 10000u; // 10us
 
-static uint32_t           info_count          = 6666; /* >6k triggers explanation-message once */
+static uint32_t           info_count          = 6666u; /* >6k triggers explanation-message once */
 struct sync_data_s        sync_state;
-static u8                 init_done       = 0;
+static u8                 init_done       = 0u;
 
 /* PI-Tuning
  * - float is hard to use in kernel, so i32 it is ...
@@ -268,9 +269,10 @@ enum hrtimer_restart supervisor_callback(struct hrtimer *timer_for_restart)
     if ((ts_upcoming_pru > 0) && (ts_upcoming_pru != ts_upcoming_ns))
     {
         shared_mem->next_sync_timestamp_ns = ts_upcoming_ns;
-        printk(KERN_WARNING
-               "shprd.sync: upcoming TS of PRU deviates from kMod -> corrected (%lld vs %lld)",
-               ts_upcoming_pru, ts_upcoming_ns);
+        printk_ratelimited(
+                KERN_WARNING
+                "shprd.sync: upcoming TS of PRU deviates from kMod -> corrected (%lld vs %lld)",
+                ts_upcoming_pru, ts_upcoming_ns);
     }
 
     return HRTIMER_NORESTART;
@@ -302,8 +304,8 @@ enum hrtimer_restart sync_callback(struct hrtimer *timer_for_restart)
                 if (!pru1_comm_send_sync_reply(&sync_reply))
                 {
                     /* Error occurs if PRU was not able to handle previous message in time */
-                    printk(KERN_WARNING "shprd.sync: Send_SyncResponse -> back-pressure / did "
-                                        "overwrite old msg");
+                    printk_ratelimited(KERN_WARNING "shprd.sync: Send_SyncResponse -> "
+                                                    "back-pressure / did overwrite old msg");
                 }
                 /* resetting to the longest sleep period */
                 step_pos = 0;
@@ -317,8 +319,9 @@ enum hrtimer_restart sync_callback(struct hrtimer *timer_for_restart)
 
             default:
                 /* these are all handled in userspace and will be passed by sys-fs */
-                printk(KERN_ERR "shprd.k: received invalid command / msg-type (0x%02X) from pru1",
-                       sync_rqst.type);
+                printk_ratelimited(KERN_ERR "shprd.k: received invalid command / msg-type "
+                                            "(0x%02X) from pru1",
+                                   sync_rqst.type);
         }
     }
     else if ((ts_last_error_ns + quiet_time_ns < ts_now_ns) &&
@@ -378,21 +381,31 @@ int sync_PID_correction(struct ProtoMsg *const sync_reply, const struct ProtoMsg
 
     /* adjust PI-Tuning once stable */
     // TODO: slow down state-changes, also try holding ki - phase-changes stay in recent versions
-    if ((sync_state.input_smooth < 1000000) && (sync_state.k_state == 0))
+    if ((sync_state.k_state == 0) && (sync_state.input_smooth < 1000000))
     {
         sync_state.kp_inv_n10 *= 2;
         sync_state.ki_inv_n10 *= 2;
         sync_state.k_state++;
         printk(KERN_INFO "shprd.sync: error BELOW 1ms -> relax PI-tuning");
     }
-    else if ((sync_state.input_smooth < 200000) && (sync_state.k_state == 1))
+    else if ((sync_state.k_state == 1) && (sync_state.input_smooth < 200000))
     {
         sync_state.kp_inv_n10 *= 2;
         sync_state.ki_inv_n10 *= 2;
         sync_state.k_state++;
         printk(KERN_INFO "shprd.sync: error BELOW 200us -> relax PI-tuning");
     }
-    else if ((sync_state.input_smooth > 2000000) && (sync_state.k_state > 0))
+    else if ((sync_state.k_state == 2) && (sync_state.input_smooth < 20000))
+    {
+        sync_state.k_state++;
+        printk(KERN_INFO "shprd.sync: error BELOW 20us");
+    }
+    else if ((sync_state.k_state == 3) && (sync_state.input_smooth < 1000))
+    {
+        sync_state.k_state++;
+        printk(KERN_INFO "shprd.sync: error BELOW 1us");
+    }
+    else if ((sync_state.k_state > 0) && (sync_state.input_smooth > 2000000))
     {
         sync_state.kp_inv_n10 = kp_inv_n10_init;
         sync_state.ki_inv_n10 = ki_inv_n10_init;
@@ -421,11 +434,11 @@ int sync_PID_correction(struct ProtoMsg *const sync_reply, const struct ProtoMsg
     if (output >= correction_floor) sync_reply->value[1] = (uint32_t) (output - correction_floor);
     else sync_reply->value[1] = (uint32_t) (correction_floor - output);
 
-    if ((sync_state.input_smooth > 300) && (++info_count >= 20))
+    if ((sync_state.input_smooth > 300) && (++info_count >= 40))
     {
         if (info_count > 6600)
         {
-            printk(KERN_INFO "shprd.sync: NOTE - next message is shown every 2 s when "
+            printk(KERN_INFO "shprd.sync: NOTE - next message is shown every 4 s when "
                              "sync-error exceeds 300 ns (normal during startup)");
             //printk(KERN_INFO "shprd.sync: init PI-Tuning is: %d, %d (inverted k-values x1024)",
             //       kp_inv_n10_init, ki_inv_n10_init);
@@ -440,23 +453,27 @@ int sync_PID_correction(struct ProtoMsg *const sync_reply, const struct ProtoMsg
     /* test for validity */
     if ((input_now > (int32_t) (SYNC_INTERVAL_NS / 2)) ||
         (input_now < -(int32_t) (SYNC_INTERVAL_NS / 2)))
-        printk(KERN_ERR "shprd.sync: input (P) is out of bound (%d ns) -> BUG", input_now);
+        printk_ratelimited(KERN_ERR "shprd.sync: input (P) is out of bound (%d ns) -> BUG",
+                           input_now);
 
     /* plausibility-check, in case the sync-algo produces jumps */
     if (ts_previous_ns > 0)
     {
         int64_t diff_timestamp_ms = div_s64((int64_t) ts_upcoming_ns - ts_previous_ns, 1000000u);
         if (diff_timestamp_ms < 0)
-            printk(KERN_ERR "shprd.sync: backwards timestamp-jump detected (sync-loop, %lld ms)",
-                   diff_timestamp_ms);
+            printk_ratelimited(KERN_ERR
+                               "shprd.sync: backwards timestamp-jump detected (sync-loop, %lld ms)",
+                               diff_timestamp_ms);
         else if (diff_timestamp_ms < 95)
-            printk(KERN_ERR "shprd.sync: too small timestamp-jump detected (sync-loop, %lld ms)",
-                   diff_timestamp_ms);
+            printk_ratelimited(KERN_ERR
+                               "shprd.sync: too small timestamp-jump detected (sync-loop, %lld ms)",
+                               diff_timestamp_ms);
         else if (diff_timestamp_ms > 105)
-            printk(KERN_ERR "shprd.sync: forwards timestamp-jump detected (sync-loop, %lld ms)",
-                   diff_timestamp_ms);
+            printk_ratelimited(KERN_ERR
+                               "shprd.sync: forwards timestamp-jump detected (sync-loop, %lld ms)",
+                               diff_timestamp_ms);
         else if (ts_upcoming_ns == 0)
-            printk(KERN_ERR "shprd.sync: zero timestamp detected (sync-loop)");
+            printk_ratelimited(KERN_ERR "shprd.sync: zero timestamp detected (sync-loop)");
     }
     ts_previous_ns = ts_upcoming_ns;
     return 0;

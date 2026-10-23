@@ -2,7 +2,7 @@
 
 - second coil makes IC unstable -> replace by copper-bridge
 
-# first steps & Powerup
+## first steps & Powerup
 
 - solder barrel-plug cable to input
   - TP-Link POE-Adapter: inner contact is (+), cable marked with white line (----)

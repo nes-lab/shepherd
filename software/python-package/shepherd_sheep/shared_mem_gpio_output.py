@@ -95,7 +95,7 @@ class SharedMemGPIOOutput:
             self.N_BUFFER_CHUNKS,
         )
 
-        self._generate_chunk_views()
+        self._generate_data_views()
 
         self.fill_level: float = 0
         self.fill_last: float = 0
@@ -152,8 +152,8 @@ class SharedMemGPIOOutput:
     ) -> None:
         self.check_canary()
 
-    def _generate_chunk_views(self) -> None:
-        self.chunks: list[GPIOTrace] = []
+    def _generate_data_views(self) -> None:
+        self._mem_chunks: list[GPIOTrace] = []
         for _iter in range(self.N_BUFFER_CHUNKS):
             _index = _iter * self.N_SAMPLES_PER_CHUNK
             chunk = GPIOTrace(
@@ -170,15 +170,27 @@ class SharedMemGPIOOutput:
                     offset=self._offset_bitmasks + _index * 2,
                 ),
             )
-            self.chunks.append(chunk)
+            self._mem_chunks.append(chunk)
+
+        # this replaces .seek() & .unpack()
+        self._mem_canary = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_canary,
+        )
+        self._mem_index_pru = np.frombuffer(
+            self._mm,
+            np.uint32,
+            count=1,
+            offset=self._offset_idx_pru,
+        )
 
     def check_canary(self) -> None:
-        self._mm.seek(self._offset_canary)
-        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
-        if canary != commons.CANARY_VALUE_U32:
+        if self._mem_canary[0] != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
-                f"It is 0x{canary:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
+                f"It is 0x{self._mem_canary[0]:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
             )
             raise BufferError(msg)
 
@@ -189,10 +201,8 @@ class SharedMemGPIOOutput:
         return int(timedelta(seconds=default_s).total_seconds() * 10**9)
 
     def get_size_available(self) -> int:
-        # determine current fill-level
-        self._mm.seek(self._offset_idx_pru)
-        index_pru: int = self.ST_U32.unpack(self._mm.read(4))[0]
-        avail_length = (index_pru - self.index_next) % self.N_SAMPLES
+        """Determine current fill-level."""
+        avail_length = (int(self._mem_index_pru[0]) - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
         if (self.fill_level <= 0.5 - self.FILL_GAP) and (self.fill_last >= 0.5 + self.FILL_GAP):

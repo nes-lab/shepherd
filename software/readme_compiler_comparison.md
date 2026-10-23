@@ -2,11 +2,11 @@
 
 ## 2026
 
-- GCC 15.1 action https://github.com/nes-lab/shepherd/actions/runs/26105454588/job/76767871518
-- GCC 16.1 action https://github.com/nes-lab/shepherd/actions/runs/26105845700/job/76769290223
+- GCC 15.1 action <https://github.com/nes-lab/shepherd/actions/runs/26105454588/job/76767871518>
+- GCC 16.1 action <https://github.com/nes-lab/shepherd/actions/runs/26105845700/job/76769290223>
 - CGT v2.3.3
 
-```
+```text
 Gnupru 2025.05 - GCC 15.1
 	text	   data	    bss	    dec	    hex	filename
    7484	    496	    544	   8524	   214c	gen_gcc/pru0-shepherd-EMU-fw.elf
@@ -28,15 +28,14 @@ CGT v2.3.3
    7944     112     796    8852    2294 gen/pru0-programmer-SBW.out
 ```
 
-
 ## 2025
 
-- GCC 15.1 action: https://github.com/nes-lab/shepherd/actions/runs/15343379026/job/43174242856
-- GCC 14.1 action: https://github.com/nes-lab/shepherd/actions/runs/15308861373/job/43068333598
-- GCC 13.1 action: https://github.com/nes-lab/shepherd/actions/runs/15343636460/job/43175016523
+- GCC 15.1 action: <https://github.com/nes-lab/shepherd/actions/runs/15343379026/job/43174242856>
+- GCC 14.1 action: <https://github.com/nes-lab/shepherd/actions/runs/15308861373/job/43068333598>
+- GCC 13.1 action: <https://github.com/nes-lab/shepherd/actions/runs/15343636460/job/43175016523>
 - CGT v2.3.3
 
-```
+```text
 elf/byte   text	   data	    bss	    dec	    hex	filename
 
 88164    8112	    420	    544	   9076	   2374	pru0-shepherd-EMU-fw gcc-13.1
