@@ -116,7 +116,7 @@ class PHC2SYSLogMonitor(Monitor):
                     data.get("MESSAGE", ""),
                 )
             if prio < 4 and self.report_errors:
-                log.error("[%s] received error: %s", type(self).__name__, data["MESSAGE"])
+                log.error("[%s] received error: %s (prio%d)", type(self).__name__, data["MESSAGE"], prio)
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def check_status(self) -> None:
