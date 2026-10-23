@@ -16,7 +16,7 @@ class PHC2SYSLogMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-        backlog: int = 60,
+        backlog: int = 10,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
 
@@ -50,7 +50,8 @@ class PHC2SYSLogMonitor(Monitor):
             "--boot",  # filter for current boot
             "--output=json",
             "--output-fields=PRIORITY,MESSAGE",
-            "--since=-10s",
+            # "--since=-10s",  # noqa: ERA001
+            # sensitive to time-jumps
             "--utc",
         ]  # for client
         # TODO: switch to json (see kernel-monitor) to receive priority & warnings

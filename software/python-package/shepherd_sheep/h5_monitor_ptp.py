@@ -16,7 +16,7 @@ class PTPMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-        backlog: int = 60,
+        backlog: int = 10,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
         self.ds_values = self.data.create_dataset(
@@ -37,7 +37,8 @@ class PTPMonitor(Monitor):
             f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
-            "--since=-10s",
+            # "--since=-10s",  # noqa: ERA001
+            # sensitive to time-jumps
             "--utc",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603

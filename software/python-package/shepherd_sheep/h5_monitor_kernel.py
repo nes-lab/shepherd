@@ -16,7 +16,7 @@ class KernelMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-        backlog: int = 60,
+        backlog: int = 10,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.52)
 
@@ -50,7 +50,8 @@ class KernelMonitor(Monitor):
             "--boot",  # filter for current boot
             "--output=json",
             "--output-fields=PRIORITY,MESSAGE",
-            "--since=-10s",
+            # "--since=-10s",  # noqa: ERA001
+            # sensitive to time-jumps
             "--utc",
         ]
         self.process = subprocess.Popen(  # noqa: S603
