@@ -129,13 +129,13 @@ class PHC2SYSLogMonitor(Monitor):
                     freq_Hz = int(words[i_start + 4])
                 except ValueError:
                     continue
-                if abs(offset_ns) > 500_000:
+                if abs(offset_ns) > 50_000:
                     log.error(
-                        "[%s] Sync-Offset is unexpected high (%d us)",
+                        "[%s] Sync-Offset is unexpected high (%.3f us)",
                         type(self).__name__,
-                        offset_ns // 1000,
+                        offset_ns * 1e-3,
                     )
-                if abs(freq_Hz) > 50_000_000:
+                if abs(freq_Hz) > 5_000_000:
                     log.error(
                         "[%s] Sync-Compensation is unexpected high (%.3f MHz)",
                         type(self).__name__,
