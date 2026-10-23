@@ -48,7 +48,8 @@ class PHC2SYSLogMonitor(Monitor):
             "--follow",
             f"--lines={backlog}",
             "--boot",  # filter for current boot
-            "--output=short-iso-precise",
+            "--output=json",
+            "--output-fields=PRIORITY,MESSAGE",
         ]  # for client
         # TODO: switch to json (see kernel-monitor) to receive priority & warnings
         self.process = subprocess.Popen(  # noqa: S603

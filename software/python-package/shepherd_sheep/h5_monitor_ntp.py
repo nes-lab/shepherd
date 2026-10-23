@@ -47,7 +47,8 @@ class NTPMonitor(Monitor):
             "--follow",
             f"--lines={backlog}",
             "--boot",  # filter for current boot
-            "--output=short-iso-precise",
+            "--output=json",
+            "--output-fields=PRIORITY,MESSAGE",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603
             command,
