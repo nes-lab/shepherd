@@ -121,6 +121,27 @@ class PHC2SYSLogMonitor(Monitor):
                 log.error(
                     "[%s] received prio%d error: %s ", type(self).__name__, prio, data["MESSAGE"]
                 )
+            words = data.get("MESSAGE", "").split()
+            if "offset" in words:
+                try:
+                    i_start = words.index("offset")
+                    offset_ns = int(words[i_start + 1])
+                    freq_Hz = int(words[i_start + 4])
+                except ValueError:
+                    continue
+                if abs(offset_ns) > 500_000:
+                    log.error(
+                        "[%s] Sync-Offset is unexpected high (%d us)",
+                        type(self).__name__,
+                        offset_ns // 1000,
+                    )
+                if abs(freq_Hz) > 50_000_000:
+                    log.error(
+                        "[%s] Sync-Compensation is unexpected high (%.3f MHz)",
+                        type(self).__name__,
+                        freq_Hz * 1e-6,
+                    )
+
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def check_status(self) -> None:
