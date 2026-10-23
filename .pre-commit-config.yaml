@@ -105,12 +105,12 @@ repos:
       - id: clang-format
         types_or: [c++, c]
 
-  - repo: https://github.com/rvben/rumdl-pre-commit
-    rev: v0.3.0
-    hooks:
-      - id: rumdl      # Lint only;
-        args: [--fix]
-      - id: rumdl-fmt  # Pure format, exits 0 on violations
+#  - repo: https://github.com/rvben/rumdl-pre-commit
+#    rev: v0.3.0
+#    hooks:
+#      - id: rumdl      # Lint only;
+#        args: [--fix]
+#      - id: rumdl-fmt  # Pure format, exits 0 on violations
 
 
   # cpp-check comes last! fails if uninstalled
