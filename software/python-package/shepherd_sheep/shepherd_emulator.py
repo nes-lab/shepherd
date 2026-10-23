@@ -218,7 +218,7 @@ class ShepherdEmulator(ShepherdIO):
             is_raw=True,
             omit_timestamps=True,
         ):
-            time.sleep(self.shared_mem.iv_inp.duration_chunk_s / 2)
+            time.sleep(self.shared_mem.iv_inp.duration_chunk_s / 3)
             # rate limit for testbed - ptp / eth-controller is currently easy to overwhelm
             if not self.shared_mem.iv_inp.write_iv(
                 data=IVTrace(voltage=input_data[1], current=input_data[2])

@@ -1,10 +1,12 @@
 import os
 import subprocess
 import threading
+from datetime import timedelta
 from types import TracebackType
 
 import h5py
 import orjson
+from shepherd_core.data_models.base.timezone import local_now
 from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .h5_monitor_abc import Monitor
@@ -40,6 +42,7 @@ class PHC2SYSLogMonitor(Monitor):
         )
         self.report_errors = False
         # gets activated with .check_status()
+        timestamp_backlog = local_now() - timedelta(seconds=10)
 
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -50,6 +53,7 @@ class PHC2SYSLogMonitor(Monitor):
             "--boot",  # filter for current boot
             "--output=json",
             "--output-fields=PRIORITY,MESSAGE",
+            f"--since='{timestamp_backlog.isoformat(sep=' ')[:19]}'",
         ]  # for client
         # TODO: switch to json (see kernel-monitor) to receive priority & warnings
         self.process = subprocess.Popen(  # noqa: S603
@@ -117,7 +121,7 @@ class PHC2SYSLogMonitor(Monitor):
                 )
             if prio < 4 and self.report_errors:
                 log.error(
-                    "[%s] received error: %s (prio%d)", type(self).__name__, data["MESSAGE"], prio
+                    "[%s] received prio%d error: %s ", type(self).__name__, prio, data["MESSAGE"]
                 )
         log.debug("[%s] thread ended itself", type(self).__name__)
 
