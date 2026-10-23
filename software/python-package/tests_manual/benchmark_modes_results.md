@@ -318,10 +318,10 @@ Biggest improvements come from
 
 | Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note |
 |---------------------------------|-------------|-------------|--------------|--------------|------|
-| EMU optimized ShpInput ivtrace  | 12          | 42          | 33.5         | 0.479        |      |
-| EMU optimized ShpInput notrace  | 6           | 24          | 13.0         | 0.001        |      |
-| EMU optimized hrvformat ivtrace | 20          | 39          | 32.5         | 0.479        |      |
-| EMU optimized hrvformat notrace | 7           | 19          | 12.4         | 0.001        |      |
+| EMU optimized ShpInput ivtrace  | 18          | 44          | 33.1         | 0.478        |      |
+| EMU optimized ShpInput notrace  | 3           | 31          | 12.2         | 0.001        |      |
+| EMU optimized hrvformat ivtrace | 23          | 39          | 32.8         | 0.479        |      |
+| EMU optimized hrvformat notrace | 6           | 22          | 11.7         | 0.001        |      |
 | EMU gpio datarate=57600         | 22          | 37          | 30.8         | 0.288        |      |
 | EMU gpio datarate=115200        | 19          | 41          | 33.9         | 0.372        |      |
 | EMU gpio datarate=230400        | 6           | 47          | 40.8         | 0.519        |      |
@@ -377,7 +377,7 @@ Biggest improvements come from
 | HRV compression=1               | 10          | 29          | 22.4         | 0.116        |      |
 | HRV compression=6               | 8           | 33          | 25.4         | 0.082        |      |
 
-## 2026-10-15 - Testbed, NAS
+## 2026-10-15 - Testbed, NAS (first update)
 
 Learning:
 
@@ -417,3 +417,48 @@ Learning:
 | EMU input-compression=None      | 41      | 94      | 65.7     | 0.477 |           |
 | EMU input-compression=lzf       | 47      | 84      | 65.6     | 0.477 |           |
 | EMU input-compression=1         | 50      | 96      | 67.4     | 0.476 |           |
+
+## 2026-10-23 - Testbed, NAS (second update)
+
+| Type                            | CPU_min [%] | CPU_max [%] | CPU_mean [%] | File [MiB/s] | Note       |
+|---------------------------------|-------------|-------------|--------------|--------------|------------|
+| EMU optimized ShpInput ivtrace  | 30          | 73          | 45.0         | 0.475        |            |
+| EMU optimized ShpInput notrace  | 11          | 36          | 18.3         | 0.001        |            |
+| EMU optimized hrvformat ivtrace | 23          | 80          | 42.4         | 0.475        |            |
+| EMU optimized hrvformat notrace | 12          | 36          | 17.0         | 0.001        |            |
+| EMU gpio datarate=57600         | 22          | 87          | 38.0         | 0.309        |            |
+| EMU gpio datarate=115200        | 29          | 87          | 41.8         | 0.392        |            |
+| EMU gpio datarate=230400        | 30          | 100         | 50.4         | 0.546        |            |
+| EMU gpio datarate=460800        | 33          | 100         | 63.0         | 0.787        |            |
+| EMU gpio datarate=921600        | 18          | 100         | 81.8         | 1.146        |            |
+| EMU gpio datarate=1000000       | 10          | 100         | 85.2         | 1.238        |            |
+| EMU uart datarate=57600         | 41          | 71          | 57.0         | 0.231        |            |
+| EMU uart datarate=115200        | 31          | 80          | 59.5         | 0.240        |            |
+| EMU uart datarate=230400        | 42          | 87          | 62.8         | 0.252        |            |
+| EMU uart datarate=460800        | 60          | 88          | 69.0         | 0.270        |            |
+| EMU input-option=native+static  | 26          | 58          | 36.4         | 0.221        |            |
+| EMU input-option=native+random  | 30          | 76          | 43.7         | 0.476        |            |
+| EMU input-option=scaled+static  | 18          | 51          | 33.6         | 0.221        |            |
+| EMU input-option=scaled+random  | 30          | 70          | 43.3         | 0.476        |            |
+| EMU t_offset=20                 | 14          | 85          | 43.9         | 0.476        |            |
+| EMU t_offset=25                 | 15          | 80          | 43.8         | 0.476        |            |
+| EMU t_offset=30                 | 31          | 73          | 44.4         | 0.476        |            |
+| EMU t_offset=35                 | 24          | 86          | 42.9         | 0.476        |            |
+| EMU power @ samplerate=10       | 20          | 41          | 30.5         | 0.001        |            |
+| EMU power @ samplerate=100      | 21          | 40          | 31.2         | 0.002        |            |
+| EMU power @ samplerate=1000     | 19          | 45          | 30.3         | 0.005        |            |
+| EMU power @ samplerate=10000    | 22          | 44          | 31.9         | 0.041        |            |
+| EMU power @ samplerate=100000   | 26          | 92          | 43.3         | 0.370        |            |
+| EMU iv @ samplerate=10          | 18          | 34          | 27.9         | 0.001        |            |
+| EMU iv @ samplerate=100         | 17          | 46          | 28.7         | 0.002        |            |
+| EMU iv @ samplerate=1000        | 14          | 42          | 28.9         | 0.006        |            |
+| EMU iv @ samplerate=10000       | 11          | 45          | 31.1         | 0.050        |            |
+| EMU iv @ samplerate=100000      | 31          | 72          | 43.9         | 0.476        |            |
+| EMU output-compression=None     | 21          | 100         | 39.8         | 1.528        |            |
+| EMU output-compression=lzf      | 32          | 78          | 43.5         | 0.476        |            |
+| EMU output-compression=1        | 32          | 85          | 47.3         | 0.400        |            |
+| EMU output-compression=6        | 35          | 100         | 59.5         | 0.379        |            |
+| EMU input-compression=None      | 31          | 76          | 42.8         | 0.476        |            |
+| EMU input-compression=lzf       | 30          | 65          | 43.4         | 0.476        |            |
+| EMU input-compression=1         | 12          | 72          | 45.0         | 0.476        |            |
+| EMU input-compression=6         | 31          | 84          | 52.8         | 0.476        | had errors |

@@ -261,7 +261,7 @@ def bench_emu_sweep_samplerate_poweronly() -> None:
     path_input = generate_shepherd_file(Compression.lzf, random=True)  # Worst Case!
     for _power_only in [True, False]:
         for _samplerate in [10, 100, 1_000, 10_000, 100_000]:
-            _pwr_add = "power" if _power_only else "iv"
+            _pwr_add = "Power" if _power_only else "IV"
             title = f"EMU {_pwr_add} @ samplerate={_samplerate}"
             path_output = path_storage / f"emu_{_pwr_add}_samplerate{_samplerate}.h5"
             if not path_output.exists():
@@ -361,7 +361,7 @@ def bench_emu_sweep_input_options() -> None:
 
 
 def bench_emu_sweep_datarates() -> None:
-    for _type in ["gpio", "uart"]:
+    for _type in ["GPIO", "Uart"]:
         for _rate in [
             57_600,  # ~ 37 kSPS, +4% util
             115_200,  # ~ 72 kSPS, +11% util
@@ -370,9 +370,9 @@ def bench_emu_sweep_datarates() -> None:
             921_600,  # ~ 450 kSPS
             1_000_000,  # ~ 500 kSPS,
         ]:
-            if _type == "uart" and _rate > 500_000:
+            if _type == "Uart" and _rate > 500_000:
                 continue
-            title = f"EMU {_type} datarate={_rate}"
+            title = f"EMU {_type} baudrate={_rate}"
             path_output = path_storage / f"emu_{_type}_rate_{_rate}.h5"
             if not path_output.exists():
                 path_input = path_firmware / f"build_{_rate}.hex"
@@ -395,8 +395,8 @@ def bench_emu_sweep_datarates() -> None:
                     use_cal_default=True,
                     time_start=time_start,
                     virtual_source=VirtualSourceConfig(name="neutral"),
-                    uart_logging=UartLogging(baudrate=_rate) if _type == "uart" else None,
-                    gpio_tracing=GpioTracing() if _type == "gpio" else None,
+                    uart_logging=UartLogging(baudrate=_rate) if _type == "Uart" else None,
+                    gpio_tracing=GpioTracing() if _type == "GPIO" else None,
                     io_port=TargetPort.A,
                     pwr_port=TargetPort.A,
                     enable_io=True,
@@ -436,7 +436,7 @@ def bench_emu_debug_log() -> None:
 
 def bench_emu_optimized_hrvformat() -> None:
     for _type in ["ivtrace", "notrace"]:
-        title = f"EMU optimized hrvformat {_type}"
+        title = f"EMU IV opt hrvformat {_type}"
         path_output = path_storage / f"emu_optimized_hrvformat_{_type}.h5"
         if not path_output.exists():
             path_input = generate_harvest_file(random=True)
@@ -461,7 +461,7 @@ def bench_emu_optimized_hrvformat() -> None:
 
 def bench_emu_optimized() -> None:
     for _type in ["ivtrace", "notrace"]:
-        title = f"EMU optimized ShpInput {_type}"
+        title = f"EMU IV opt ShpInput {_type}"
         path_output = path_storage / f"emu_optimized_{_type}.h5"
         if not path_output.exists():
             path_input = generate_shepherd_file(
@@ -495,11 +495,13 @@ if __name__ == "__main__":
     bench_emu_optimized_hrvformat()
 
     bench_emu_sweep_datarates()
-    bench_emu_sweep_input_options()
-    bench_emu_sweep_starttime()
     bench_emu_sweep_samplerate_poweronly()
+
     bench_emu_sweep_output_compression()
     bench_emu_sweep_input_compression()
+
+    bench_emu_sweep_input_options()
+    bench_emu_sweep_starttime()
 
     if skip_hrv:
         sys.exit(0)
