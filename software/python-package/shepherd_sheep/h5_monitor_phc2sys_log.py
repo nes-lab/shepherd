@@ -1,10 +1,10 @@
 import os
 import subprocess
 import threading
-from datetime import datetime
 from types import TracebackType
 
 import h5py
+import orjson
 from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .h5_monitor_abc import Monitor
@@ -27,6 +27,19 @@ class PHC2SYSLogMonitor(Monitor):
             maxshape=(None,),
             chunks=(self.chunk_size,),
         )
+        self.ds_priority = self.data.create_dataset(
+            name="priority",
+            shape=(self.ds_size,),
+            dtype="uint8",
+            maxshape=(None,),
+            chunks=(self.chunk_size,),
+        )
+        self.ds_priority.attrs["unit"] = "n"
+        self.ds_priority.attrs["description"] = (
+            "0=emerg, 1=alert, 2=crit, 3=err, 4=warning, 5=notice, 6=info, 7=debug"
+        )
+        self.report_errors = False
+        # gets activated with .check_status()
 
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -65,6 +78,7 @@ class PHC2SYSLogMonitor(Monitor):
         self.shutdown_thread()
         self.process.terminate()
         self.ds_message.resize((self.position,))
+        self.ds_priority.resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -77,44 +91,38 @@ class PHC2SYSLogMonitor(Monitor):
             if len(line) < 1:
                 self.event.wait(self.poll_interval)  # rate limiter
                 continue
-            first_space = line.find(" ")
-            time_str = line[:first_space]
-            time_str = time_str[:-2] + ":" + time_str[-2:]
-            # TODO: workaround for py < 3.11, .fromisoformat() can handle
-            #       YYYY-MM-DDTHH:MM:SS+HH:MM, BUT NOT
-            #       YYYY-MM-DDTHH:MM:SS+HHMM (default from --output=short-iso-precise
-            time_ts = datetime.fromisoformat(time_str)
-            time_ns = int(datetime.timestamp(time_ts) * 1e9)
-
-            msg_begin = line.find("]: ") + 3
-            line = line[msg_begin:].strip()[:128]
-
+            data = orjson.loads(line)
+            prio = int(data.get("PRIORITY", 6))
             try:
                 if self.position >= self.ds_size:
                     self.ds_size += self.increment_size
                     self.ds_time.resize((self.ds_size,))
                     self.ds_message.resize((self.ds_size,))
+                    self.ds_priority.resize((self.ds_size,))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.ds_time[self.position] = time_ns
-                self.ds_message[self.position] = line
+                self.ds_time[self.position] = int(data.get("__REALTIME_TIMESTAMP", 0)) * 1000
+                self.ds_message[self.position] = data.get("MESSAGE", "")
+                self.ds_priority[self.position] = prio
                 self.position += 1
                 # TODO: lots of potential here -> batch writes (collect for 1..10 s)
             except OSError:
                 log.error(
-                    "[%s] Caught a Write Error for Line: [%s] %s",
+                    "[%s] Caught a Write Error for Line: %s",
                     type(self).__name__,
-                    type(line),
-                    line,
+                    data.get("MESSAGE", ""),
                 )
+            if prio < 4 and self.report_errors:
+                log.error("[%s] received error: %s", type(self).__name__, data["MESSAGE"])
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def check_status(self) -> None:
         if self.position == 0:
             log.warning("[%s] Service not running? No data collected yet", type(self).__name__)
             return
+        self.report_errors = True
 
     def preshape_by_runtime(self, value_s: float) -> None:
         """Reshape some datasets with predictable length."""
