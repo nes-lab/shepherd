@@ -21,6 +21,13 @@ Sheep
   - membuffers pre-assemble views that are handed out to the queues
   - rate-limit monitors and recorders
   - switch from multiprocessing.queue to queue.queue for less overhead (also for logging)
+  - prevent h5-group-lookups during runtime and don't compress message-datasets
+  - uart-logging with adaptive data-size at fixed 20 Hz collection-rate
+  - avoid querying length from hdf5-datasets
+  - make progress-bar less demanding (0.5 Hz instead of 10?, also less compute)
+  - make mem-buffers more efficient, less copies, more views (5-10 %points less cpu-util)
+  - improve performance of sysfs-access-fns used in main loop (14x faster)
+  - kMod - reduce update rate for pru-messages from 2kHz to 500 Hz
 - main loops for emu & hrv are less blocking
   - put recorders (IV, power and PRU-Util) into threads, fed by queues
   - only input-data for emu is buffered once and can block the loop
@@ -29,6 +36,10 @@ Sheep
   - add .check_status() to determine health of embedded data
   - add .flush_queues() to make sure data is fully written
   - add .shutdown_thread() to minimize boilerplate-code
+- derive info about supported samplerates from core-lib
+- reduce chunk-size of power-tracers (to hopefully reduce the large writeburst)
+- teach pytest to respect small tmpfs-partition (cleanup between tests)
+- improve error-logging - dmesg, ptp, ntp, phc2sys now record the priority-level and relay everything above warning-level to sheep
 
 Watchdog
 
@@ -39,6 +50,7 @@ Herd
 
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
 - make .open() less demanding
+- relax most timeouts and catch more errors during remote-cmd
 
 Ansible
 
@@ -59,6 +71,7 @@ Ansible
   - disable PTP-compiling and reload systemd after setup
 - image-acquire-script is faster and reports errors
 - add playbook for updating kernel (for testbed usage)
+- remove free-running strategy (slower but better to follow)
 
 Kernel-Update 6.1 - Main Improvements:
 
@@ -71,6 +84,10 @@ Kernel-Update 6.1 - Main Improvements:
 - heavily improve safety of kMods init-phase & shutdown
 - migrate to newer pru support package (5.9 to 6.5) with different style of reserving interrupts
 - resolve issue with OCMC-RAM that is used by shepherd-cache and power-management
+- OCMC - disable zeroing discarded blocks
+- OCMC - fix out of bound access bug
+- SYNC - small improvements
+- Sync - give more info about current sync-state
 
 Kernel-Update 6.1 - Downsides:
 
@@ -87,11 +104,18 @@ Kernel-Update 6.18:
 - read/write-performance seems to have improved ~ 10 %
 - add back benchmark for ktimers
 
+PRUs
+
+- fix compilation of firmware for GCC
+- disable check for working ADC
+
 Misc
 
 - add custom compiled PTP
 - update cape-errata, h5-benchmark
 - sheep - fix exception during end of resync
+- make sys-fn more friendly to external testbench
+- add rumdl to lint markdown files
 
 Speed-Benchmark on a Beaglebone Green (compiled from [testbench_direct_rw](https://github.com/nes-lab/shepherd/blob/main/software/python-package/tests_manual/testbench_direct_rw_results.md)):
 
