@@ -34,13 +34,20 @@
 
 ## Desktop-Interface for Targets
 
-A USB-Device for debugging and local dev-work with the capabilities close to Shepherd.
+A USB-Device for
 
-Main features might be
+- programming, debugging & testing targets, and
+- local dev-work with capabilities close to Shepherd, mainly
+  - record GPIO chatter
+  - record power draw
+  - emulate energy environments (EEnvs)
+
+Detailed features & requirements might be
 
 - target-port from shepherd
 - RP2350 serves as programmer (2x2 traces)
   - staying on the Pico-platform makes Riotee-Repo compatible
+  - could just use an of-the-shelve pico-board
 - ~~static 2.0 or 3.3 V target-voltage~~ dynamic voltage via DAC
   - for the sake of compatibility to generic targets a DAC should be used
 - fully connect (all 16) GPIO
@@ -52,13 +59,15 @@ Main features might be
 - fully connect (new) 2nd aux/capacitor voltage
 - NOTE: "fully connect" means, that the hardware is made capable. Software-functionality can be implemented on demand
 - route pin-traces to a dedicated Pin-header as interface for logic analyzer
-- add 2 Ohm shunt-resistor with connectors for scope or current ranger
+- add 2 Ohm shunt-resistor with connectors for external scope or current ranger
 - (optional) add VSrc-Lite via additional DAC & ADC + analog frontend
   - MCU emulates "simple" EEnvs, i.e. mean/static 1 mW input (USB1.1 is limiting factor)
   - emulating capacitor-voltage and power good is easy
   - recording current draw should also be feasible
-  - (optional) pico2 has 12bit ADCs
+  - (optional) pico2 has 12bit ADCs, could save a separate ADC? probably not
 - (optional) external target-power for transducer + harvester via analog switch
+- (optional) Sync-Port to connect a small fleet of devices
+- (optional) SD-Slot to load/store more complex EEnvs
 
 Main missing features might be
 
