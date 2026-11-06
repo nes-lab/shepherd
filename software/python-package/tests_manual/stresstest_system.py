@@ -99,7 +99,7 @@ def generate_harvest_file(
 
 
 def bench_emu_stresstest() -> None:
-    _rate = (1_000_000,)  # ~ 500 kSPS,
+    _rate = 1_000_000  # ~ 500 kSPS,
     title = "EMU Stresstest "
     path_output = path_storage / "emu_stresstest.h5"
     if not path_output.exists():
