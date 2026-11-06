@@ -34,10 +34,14 @@ RestrictRealtime=false
 LimitRTPRIO=infinity
 CPUSchedulingPriority=65
 CPUSchedulingPolicy=fifo
+# -> verify with: chrt -p $(pidof phc2sys)
+
+# optional IO-Setting - probably useless
 IOSchedulingClass=realtime
 IOSchedulingPriority=3
 # Optionally, allow memory locking if needed (less jitter through page-faults)
 LimitMEMLOCK=infinity
+
 
 [Install]
 WantedBy=multi-user.target

@@ -31,4 +31,23 @@
     - conf
     - systemd
 
+- name: Install traffic control for improved PTP-Sync
+  ansible.builtin.copy:
+    src: 'tc-eth0.service'
+    dest: '/etc/systemd/system/'
+    mode: '0644'
+  tags:
+    - install
+    - systemd
+
+- name: Activate traffic control for improved PTP-Sync
+  ansible.builtin.systemd:
+    name: 'tc-eth0.service'
+    state: reloaded
+    enabled: true
+    daemon_reload: true
+  tags:
+    - conf
+    - systemd
+
 # NOTE: could avoid a restart by issuing "sudo systemctl daemon-reload"

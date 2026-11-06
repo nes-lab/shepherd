@@ -28,6 +28,9 @@ RestrictRealtime=false
 LimitRTPRIO=infinity
 CPUSchedulingPriority=62
 CPUSchedulingPolicy=fifo
+# verify with: chrt -p $(pidof ptp4l)
+
+# optional IO-Setting - probably useless
 IOSchedulingClass=realtime
 IOSchedulingPriority=3
 # Optionally, allow memory locking if needed (less jitter through page-faults)
