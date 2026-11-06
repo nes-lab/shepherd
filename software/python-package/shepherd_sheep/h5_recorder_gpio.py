@@ -24,7 +24,7 @@ class GpioRecorder(Monitor):
             target,
             compression,
             poll_interval=0.1,
-            chunk_size=min(10_000, SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK),
+            chunk_size=SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK,
             increment_factor=100,
             # NOTE: 5x to 10x has significantly worse performance
         )
