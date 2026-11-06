@@ -102,36 +102,37 @@ def bench_emu_stresstest() -> None:
     _rate = 1_000_000  # ~ 500 kSPS,
     title = "EMU Stresstest "
     path_output = path_storage / "emu_stresstest.h5"
-    if not path_output.exists():
-        path_input = path_firmware / f"build_{_rate}.hex"
-        if not path_input.exists():
-            log.warning("Firmware not found - will skip")
-            return
-        cfg = ProgrammingTask(
-            firmware_file=path_input,
-            mcu_type="nrf52",
-            protocol=ProgrammerProtocol.SWD,
-        )
-        run_programmer(cfg)
-        path_input = generate_harvest_file(random=False)
-        time_start = int(time.time() + 30)
-        cfg = EmulationTask(
-            input_path=path_input,
-            output_path=path_output,
-            duration=240,
-            use_cal_default=True,
-            time_start=time_start,
-            virtual_source=VirtualSourceConfig(name="neutral"),
-            uart_logging=None,
-            gpio_tracing=GpioTracing(),
-            io_port=TargetPort.A,
-            pwr_port=TargetPort.A,
-            enable_io=True,
-            output_compression=Compression.lzf,
-        )
-        log.info(title)
-        time.sleep(5)
-        run_emulator(cfg)
+    path_input = path_firmware / f"build_{_rate}.hex"
+    if not path_input.exists():
+        log.warning("Firmware not found - will skip")
+        return
+    cfg = ProgrammingTask(
+        firmware_file=path_input,
+        mcu_type="nrf52",
+        protocol=ProgrammerProtocol.SWD,
+    )
+    run_programmer(cfg)
+    path_input = generate_harvest_file(random=False)
+    time_start = int(time.time() + 30)
+    cfg = EmulationTask(
+        input_path=path_input,
+        output_path=path_output,
+        duration=240,
+        use_cal_default=True,
+        time_start=time_start,
+        virtual_source=VirtualSourceConfig(name="neutral"),
+        uart_logging=None,
+        gpio_tracing=GpioTracing(),
+        io_port=TargetPort.A,
+        pwr_port=TargetPort.A,
+        enable_io=True,
+        output_compression=Compression.lzf,
+    )
+    if path_output.exists():
+        path_output.unlink()
+    log.info(title)
+    time.sleep(5)
+    run_emulator(cfg)
     calculate_stats(path_output, title)
 
 
