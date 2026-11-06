@@ -27,7 +27,7 @@ with sd.Reader("./hrv_sawtooth_1h.h5") as db:
 
 ## Reader
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_data.Reader
     :members:
     :inherited-members:
@@ -35,7 +35,7 @@ with sd.Reader("./hrv_sawtooth_1h.h5") as db:
 
 ## Writer
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_data.Writer
     :members:
     :inherited-members:

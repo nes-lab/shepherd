@@ -42,7 +42,7 @@ pip3 install . -U
 
 For details either use the help provided by the tool or have a look into the [documentation](https://nes-lab.github.io/shepherd/tools/herd)
 
-```{caution}
+```text {caution}
 Usage with Windows is possible, but not recommended.
 At least the unittests are flakey after 5+ tests and can result in zombie-threads crashing the program.
 ```

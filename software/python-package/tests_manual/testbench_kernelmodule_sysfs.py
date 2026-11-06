@@ -3,9 +3,10 @@ The FNs called during main-loop should be optimized!
 - generators / iterator are 10x faster
 
 Benchmark results 2026-10-01
-        read_pru_msg_v1() = 0.512 s for 1000 reps
-        next(pru_msg_v2) = 0.046 s for 1000 reps
-        read_pru_msg_now() = 0.048 s for 1000 reps
+        read_pru_msg_v1() = 0.568 s for 1000 reps
+        next(pru_msg_v2) = 0.049 s for 1000 reps
+        next(pru_msg_v3) = 0.050 s for 1000 reps
+        read_pru_msg_now() = 0.038 s for 1000 reps
 """
 
 import time
@@ -31,7 +32,28 @@ def read_pru_msg_v1() -> tuple[int, list[int]] | None:
         return None
 
 
-def read_pru_msg_v2() -> Generator[tuple[int, list[int]] | None, None, None]:
+def read_pru_msg_v2() -> tuple[int, list[int]] | None:
+    with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
+        message = f.read().rstrip()
+    msg_parts = [int(x) for x in message.split()]
+    if len(msg_parts) < 2:
+        return None
+    return msg_parts[0], msg_parts[1:]
+
+
+path_outbox = Path("/sys/shepherd/pru_msg_outbox")
+
+
+def read_pru_msg_v3() -> tuple[int, list[int]] | None:
+    with path_outbox.open(encoding="utf-8") as f:
+        message = f.read().rstrip()
+    msg_parts = [int(x) for x in message.split()]
+    if len(msg_parts) < 2:
+        return None
+    return msg_parts[0], msg_parts[1:]
+
+
+def read_pru_msg_v4() -> Generator[tuple[int, list[int]] | None, None, None]:
     while True:
         with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
             while f.readable():
@@ -43,10 +65,10 @@ def read_pru_msg_v2() -> Generator[tuple[int, list[int]] | None, None, None]:
                 yield msg_parts[0], msg_parts[1:]
 
 
-pru_msg_v2 = read_pru_msg_v2()
+pru_msg_v4 = read_pru_msg_v4()
 
 
-def read_pru_msg_v3() -> Generator[tuple[int, list[int]] | None, None, None]:
+def read_pru_msg_v5() -> Generator[tuple[int, list[int]] | None, None, None]:
     path = Path("/sys/shepherd/pru_msg_outbox")
     while True:
         if not path.exists():
@@ -65,7 +87,7 @@ def read_pru_msg_v3() -> Generator[tuple[int, list[int]] | None, None, None]:
             continue
 
 
-pru_msg_v3 = read_pru_msg_v3()
+pru_msg_v5 = read_pru_msg_v5()
 
 
 def read_pru_msg_now() -> tuple[int, list[int]] | None:
@@ -77,8 +99,10 @@ if __name__ == "__main__":
 
     for routine_under_test in [
         "read_pru_msg_v1()",
-        "next(pru_msg_v2)",
-        "next(pru_msg_v3)",
+        "read_pru_msg_v2()",
+        "read_pru_msg_v3()",
+        "next(pru_msg_v4)",
+        "next(pru_msg_v5)",
         "read_pru_msg_now()",
     ]:
         repetitions = 1000

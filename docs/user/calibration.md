@@ -7,7 +7,7 @@ Similarly, for emulation, we need to map physical voltage and current values to 
 This mapping is assumed to be linear.
 For example, to convert a raw value :math:`v_{raw}` to its physical equivalent :math:`v_{physical}`:
 
-```{math}
+```text {math}
 v_{physical} = v_{binary} \cdot gain + offset
 ```
 

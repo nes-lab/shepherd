@@ -157,10 +157,11 @@ class ShepherdHarvester(ShepherdIO):
         set_stop(ts_end)
 
         prog_bar = tqdm(
-            total=int(10 * duration_s),
+            total=int(duration_s / self.shared_mem.iv_out.DURATION_CHUNK_S),  # chunk-count
             desc="Measurement",
             unit="n",
             leave=False,
+            mininterval=1.0,
         )
 
         ts_data_last = self.start_time
@@ -174,7 +175,7 @@ class ShepherdHarvester(ShepherdIO):
 
             data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
             if data_iv is not None:
-                prog_bar.update(n=int(10 * data_iv.duration()))
+                prog_bar.update()
                 if data_iv.timestamp_s() > ts_end:
                     log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     break

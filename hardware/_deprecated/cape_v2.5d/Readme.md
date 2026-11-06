@@ -32,7 +32,7 @@
 - holes on panel can be 3.2 mm for stencil printer
 - QR Code can now be directly created in Altium
 - larger tag-field (upper left corner)
-- perforated breaking lines on panels  (extension of milled line)
+- perforated breaking lines on panels (extension of milled line)
 - cage with paste?
 - JST-Connector needs paste on mech-pad
 - panel-bridge under JST - bad coincidence

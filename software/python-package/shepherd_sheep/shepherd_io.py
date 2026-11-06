@@ -193,7 +193,7 @@ class ShepherdIO:
         """
         sysfs.write_pru_msg(msg_type, values)
 
-    def _get_msg(self, timeout_n: int = 5) -> tuple[int, list[int]]:
+    def _get_msg(self, timeout_n: int = 5, resolution: int = 1000) -> tuple[int, list[int]]:
         """Tries to retrieve formatted message from PRU0.
 
         Args:
@@ -201,10 +201,11 @@ class ShepherdIO:
                 before raising timeout exception
 
         """
-        for _ in range(timeout_n):
+        sleep_period = self.segment_period_s / resolution
+        for _ in range(resolution * timeout_n):
             msg = sysfs.read_pru_msg()
             if msg is None:
-                time.sleep(self.segment_period_s)
+                time.sleep(sleep_period)
                 continue
             return msg
         raise ShepherdTimeoutError

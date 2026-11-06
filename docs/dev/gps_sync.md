@@ -3,7 +3,6 @@
 The goal is to precisely synchronize all Linux system clocks in the network to global time obtained from a GPS receiver.
 Note how the following description traverses the clock hierarchy top-down starting with the GPS receiver down to the linux clock on the host node.
 
-
 ## General Structure
 
 The primary node is connected to a u-blox GPS receiver, from which it receives a PPS signal via GPIO and global time via UART if the GPS-Modul has a position-fix.
@@ -12,7 +11,6 @@ One kernel module and two services work in tandem to provide a grandmaster clock
 - `pps_gmtimer` (kernel module) timestamps edges on a GPIO pin with respect to an internal hardware timer on the AM335x and feeds the timestamps as a Linux pps device.
 - `gpsd` talks to the GPS via a serial interface, parses the protocol and extracts timing information that is fed to the following service (chrony).
 - `chrony` combines the global timing information from gpsd and the precise PPS signal from the pps device and synchronizes the Linux system clock to global GPS time.
-
 
 ## Hardware setup
 
@@ -42,12 +40,13 @@ In addition, the standard config of the receiver leads to the following behavior
 
 :::{note}
 Recent versions of gpsd include a tool `ubxtool`, allowing convenient configuration of ublox receivers:
- - Poll GNSS config: `ubxtool -p CFG-GNSS`
- - Enable Galileo: `ubxtool -e GALILEO`
- - Enable binary messages: `ubxtool -e BINARY`
- - Disable NMEA messages: `ubxtool -d NMEA`
- - Disable SBAS: `ubxtool -d SBAS`
- - Poll time pulse config: `ubxtool -p CFG-TP5`
+
+- Poll GNSS config: `ubxtool -p CFG-GNSS`
+- Enable Galileo: `ubxtool -e GALILEO`
+- Enable binary messages: `ubxtool -e BINARY`
+- Disable NMEA messages: `ubxtool -d NMEA`
+- Disable SBAS: `ubxtool -d SBAS`
+- Poll time pulse config: `ubxtool -p CFG-TP5`
 :::
 
 ## Deploy
@@ -82,7 +81,6 @@ If you want to see what's going on you can run the services in DEBUG-Mode:
 
 - chrony: `sudo chronyd -dd`
 - gpsd: `sudo gpsd -N /dev/ttyO2 -D15 -n`
-
 
 ## Pitfalls
 

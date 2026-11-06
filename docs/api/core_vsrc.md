@@ -8,7 +8,7 @@ These are simulation-models of the versions running on the PRUs.
 
 ## Virtual Source
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_core.vsource.VirtualSourceModel
     :members:
     :inherited-members:
@@ -16,7 +16,7 @@ These are simulation-models of the versions running on the PRUs.
 
 ## Virtual Converter
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_core.vsource.VirtualConverterModel
     :members:
     :inherited-members:
@@ -24,7 +24,7 @@ These are simulation-models of the versions running on the PRUs.
 
 ## Virtual Harvester
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_core.vsource.VirtualHarvesterModel
     :members:
     :inherited-members:

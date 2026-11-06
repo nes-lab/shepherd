@@ -3,6 +3,7 @@
 ## 2026.10.1 - unreleased
 
 Sheep
+
 - improve performance of Hdf5-Writer by adding shuffle and optimizing chunking of timeseries
 - fix shared-mem access (potential bug)
 - add & update performance-benchmarks
@@ -20,6 +21,13 @@ Sheep
   - membuffers pre-assemble views that are handed out to the queues
   - rate-limit monitors and recorders
   - switch from multiprocessing.queue to queue.queue for less overhead (also for logging)
+  - prevent h5-group-lookups during runtime and don't compress message-datasets
+  - uart-logging with adaptive data-size at fixed 20 Hz collection-rate
+  - avoid querying length from hdf5-datasets
+  - make progress-bar less demanding (0.5 Hz instead of 10?, also less compute)
+  - make mem-buffers more efficient, less copies, more views (5-10 %points less cpu-util)
+  - improve performance of sysfs-access-fns used in main loop (14x faster)
+  - kMod - reduce update rate for pru-messages from 2kHz to 500 Hz
 - main loops for emu & hrv are less blocking
   - put recorders (IV, power and PRU-Util) into threads, fed by queues
   - only input-data for emu is buffered once and can block the loop
@@ -28,16 +36,29 @@ Sheep
   - add .check_status() to determine health of embedded data
   - add .flush_queues() to make sure data is fully written
   - add .shutdown_thread() to minimize boilerplate-code
+- derive info about supported samplerates from core-lib
+- reduce chunk-size of power-tracers (to hopefully reduce the large writeburst)
+- teach pytest to respect small tmpfs-partition (cleanup between tests)
+- improve error-logging
+  - dmesg, PTP, ntp, PHC2SYS now record the priority-level and relay everything above warning-level to sheep
+  - double monitors for each PHC2SYS & PTP were fused in one
+  - monitors for PHC2SYS & PTP warn about too high sync-offset or sync-compensation (now 50 us / 5 MHz, was 500 us, 50 MHz)
+  - backlog is limited to 10 entries; was 60 and resulted in stale errors getting re-mentioned
+- rate-limit the initial buffer fill to avoid network-congestion on testbed
 
 Watchdog
+
 - add tooling to automatically update the hostname. This is helpful when swapping SD-Cards of the observers as this was the last manual update step. The hostname is derived from the MAC address. This will only work if the MAC address is found in the observer-fixtures of the testbed-client.
 - make system immune to faulty config (avoids exception-loop with high cpu-util)
 
 Herd
+
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
 - make .open() less demanding
+- relax most timeouts and catch more errors during remote-cmd
 
 Ansible
+
 - cleaning-role
   - keep shepherd/.git dir
   - remove more packages
@@ -55,8 +76,10 @@ Ansible
   - disable PTP-compiling and reload systemd after setup
 - image-acquire-script is faster and reports errors
 - add playbook for updating kernel (for testbed usage)
+- remove free-running strategy (slower but better to follow)
 
 Kernel-Update 6.1 - Main Improvements:
+
 - switch from 4.19.94-ti-r74 (2018-10) to 6.1.83-ti-r39 (2022-12)
 - simplify device-tree (downward compatible)
 - makefile for device-tree compiles & installs all possible variations
@@ -66,24 +89,39 @@ Kernel-Update 6.1 - Main Improvements:
 - heavily improve safety of kMods init-phase & shutdown
 - migrate to newer pru support package (5.9 to 6.5) with different style of reserving interrupts
 - resolve issue with OCMC-RAM that is used by shepherd-cache and power-management
+- OCMC - disable zeroing discarded blocks
+- OCMC - fix out of bound access bug
+- SYNC - small improvements
+- Sync - give more info about current sync-state
+- OCMC - is now paused, restarted & reset when PRU-firmware is changed
 
 Kernel-Update 6.1 - Downsides:
+
 - OCMC-Cache between System and PRU is only half from before (it's partly used by linux)
-   - from 64 kByte or 82 ms buffer to 32 kByte or 41 ms
-   - power management (PM) uses the first 8 kByte, but cache-design needs 2^n
-   - PM could be turned off (runtime-command available), but no one guarantees, that the OCMC isn't written to -> one could try to modify the device tree and NOT reserve that 4+4 kByte and check if system sticks to it (using shepherd resulted in a kernel panic when that shared area was modified)
+  - from 64 kByte or 82 ms buffer to 32 kByte or 41 ms
+  - power management (PM) uses the first 8 kByte, but cache-design needs 2^n
+  - PM could be turned off (runtime-command available), but no one guarantees, that the OCMC isn't written to -> one could try to modify the device tree and NOT reserve that 4+4 kByte and check if system sticks to it (using shepherd resulted in a kernel panic when that shared area was modified)
 
 Kernel-Update 6.18:
+
 - migrate from 6.1.83-ti-r39 (2022-12) to 6.18.53-bone55 (2025-11)
 - that's the first kernel-version that fully supports the beaglebone green eco
 - device-tree - build-process now uses provided includes (less custom, error-prone code)
 - read/write-performance seems to have improved ~ 10 %
 - add back benchmark for ktimers
 
+PRUs
+
+- fix compilation of firmware for GCC
+- disable check for working ADC
+
 Misc
+
 - add custom compiled PTP
 - update cape-errata, h5-benchmark
 - sheep - fix exception during end of resync
+- make sys-fn more friendly to external testbench
+- add rumdl to lint markdown files
 
 Speed-Benchmark on a Beaglebone Green (compiled from [testbench_direct_rw](https://github.com/nes-lab/shepherd/blob/main/software/python-package/tests_manual/testbench_direct_rw_results.md)):
 
@@ -134,10 +172,10 @@ New Version
 | EMU gpio datarate921600       | 86      | 100     | 96.9     | 1.128 | high load |
 | EMU gpio datarate1000000      | 62      | 100     | 99.3     | 1.223 | high load |
 
-
 ## 2026.07.1
 
 Sheep
+
 - emu - exit measurement loop when PRU switches to idle
 - emu & hrv - exit non-zero if an error (or worse) was handed to logger during measurements
 - emu & hrv - force small 1 or 10 ms breaks in main loop (depending of workload)
@@ -153,10 +191,12 @@ Sheep
 - mount CLI-option now reconnects and checks availability of network drives
 
 Programmer - SBW / msp430
+
 - add forced mode, that ignores errors during device.open()
 - inform via CLI, that data-rate option is ignored (SBW has fixed speeds)
 
 PTP - tune to be less susceptible to high CPU load
+
 - increase prios and change scheduler of ptp-kworker, ptp, phc2sys
 - increase timeout for answer of kworker (PTP tends to jump)
 - increase prios of socket and dscp type (QoS)
@@ -167,6 +207,7 @@ PTP - tune to be less susceptible to high CPU load
 - ~~activate filter for hw-timestamping~~
 
 Misc
+
 - herd - log-fetching differentiates active from failed instances (exit-code -1)
 - all CLI-tools exit non-zero when receiving external signal
 - herd - resync-cmd uses implementation of sheep
@@ -181,7 +222,7 @@ Make the root filesystem less prone to errors
 - strategy 2 - make mounting of root-filesystem more robust
 - strategy 3 - check filesystem on every boot
   - this caused the kMod to NOT start up, because PRU0 could not load firmware, because allocation of buffers in DRAM failed
-  - 3 possible fixes were tried (https://github.com/nes-lab/shepherd/issues/162), all failed
+  - 3 possible fixes were tried (<https://github.com/nes-lab/shepherd/issues/162>), all failed
   - ~~migration to a newer kernel is recommended~~
   - **increasing Contiguous Memory allocation (CMA) in u-boot from 50M (default) to 200M solved the issue**
 
@@ -240,7 +281,7 @@ Sheep
 - verify that settings where actually applied in PRU before starting a measurement (wasn't fully done for hrv)
 - virtual harvester - ivsurface recorder - add fixed-length and automatic cutout-mode
   - the config-model got new parameters and the firmware is respecting them
-  - documentation can be found here: https://github.com/nes-lab/shepherd/blob/main/docs/user/virtual_harvester.md#ivsurface---transition-cutout
+  - documentation can be found here: <https://github.com/nes-lab/shepherd/blob/main/docs/user/virtual_harvester.md#ivsurface---transition-cutout>
 
 KModule
 
@@ -276,7 +317,7 @@ This update brings performance improvements, fewer bugs and removes limitations 
 - add support for new cape hardware v2.5e (more target IO, two power good pins)
   - the altered wiring frees up PRU1 - so idle GPIO sampling improves by 20 % (from 1.4 to 1.67 MHz)
 - power-good is now calculated with two pins in mind (low & high threshold) and automatically falls back to hysteresis if second pin is missing in hardware (capes before v2.5)
-- massive speedup of sheep-tool, see https://github.com/nes-lab/shepherd/issues/150 for benchmarks
+- massive speedup of sheep-tool, see <https://github.com/nes-lab/shepherd/issues/150> for benchmarks
   - big refactoring or core-lib and cli.py to avoid expensive imports
   - replace PyYAML with faster ryaml
 
@@ -501,7 +542,7 @@ This unlocked and triggered a lot of other improvements in both regards.
   - pru1 reports 704 ns as worst loop (1.420 MHz), without debug 660 ns (1.515 MHz)
 - vPowerSource
   - Emulation from ivsamples uses now 78 % PRU0 (mean), at most 80 % (max)
-  - emu with harvesting (from IVSurface) uses 86 % PRU0, at most 89 %  (max)
+  - emu with harvesting (from IVSurface) uses 86 % PRU0, at most 89 % (max)
   - add prototype of battery-model to PRU and also integrate config into shared RAM
   - vharvester - improve similarity to VOC-search by jumping to VOC
 - timesync
@@ -733,36 +774,36 @@ This unlocked and triggered a lot of other improvements in both regards.
 ## 0.7.0
 
 - pru-firmware:
-   - improve blind-spots of gpio-sampling
-   - fix compiler warning (cgt & gcc)
-   - [measure timings](https://github.com/orgua/shepherd-v2-planning/blob/main/scratch/pruBenchmark_2023_10.md)
-   - bugfixes
+  - improve blind-spots of gpio-sampling
+  - fix compiler warning (cgt & gcc)
+  - [measure timings](https://github.com/orgua/shepherd-v2-planning/blob/main/scratch/pruBenchmark_2023_10.md)
+  - bugfixes
 - sheep
-   - refactoring of monitors
-   - repair ptp & dmesg / kernel logging
-   - repair uart-monitor
-   - allow to record stdout of sheep
-   - set gpio-direction to input for now
-   - redo logging-system
+  - refactoring of monitors
+  - repair ptp & dmesg / kernel logging
+  - repair uart-monitor
+  - allow to record stdout of sheep
+  - set gpio-direction to input for now
+  - redo logging-system
 - herd
-   - more reliable (needs to enter context now)
-   - tests availability of nodes / sheep
-   - redo logging-system
-   - refactor
-   - improve doc
-   - more functionality in herd-class
+  - more reliable (needs to enter context now)
+  - tests availability of nodes / sheep
+  - redo logging-system
+  - refactor
+  - improve doc
+  - more functionality in herd-class
 - doc
-   - improve details
-   - add info about testbed and subprojects
+  - improve details
+  - add info about testbed and subprojects
 - ansible
-   - tweaks, speedups
-   - fixes
-   - (timesync) services are now more reliable
-   - update kernel version
-   - lots of linting
-   - script to activate emmc-flasher
+  - tweaks, speedups
+  - fixes
+  - (timesync) services are now more reliable
+  - update kernel version
+  - lots of linting
+  - script to activate emmc-flasher
 - cal
-   - lots of tweaks and fixes
+  - lots of tweaks and fixes
 - **tested**: ansible-installer, herd, sheep
 
 ## v0.4.5 - 2023.08.23

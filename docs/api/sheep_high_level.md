@@ -18,6 +18,7 @@ from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep.shepherd_harvester import ShepherdHarvester
 from shepherd_sheep.logger import set_verbosity
 ```
+
 ```{literalinclude} ../../software/python-package/shepherd_sheep/__init__.py
 :language: python
 :pyobject: run_harvester
@@ -36,6 +37,7 @@ from shepherd_core.data_models.task import EmulationTask
 from shepherd_sheep.shepherd_emulator import ShepherdEmulator
 from shepherd_sheep.logger import set_verbosity
 ```
+
 ```{literalinclude} ../../software/python-package/shepherd_sheep/__init__.py
 :language: python
 :pyobject: run_emulator
@@ -61,6 +63,7 @@ from shepherd_core.fw_tools import firmware_to_hex
 from shepherd_core.fw_tools import modify_uid
 from shepherd_sheep.logger import set_verbosity
 ```
+
 ```{literalinclude} ../../software/python-package/shepherd_sheep/__init__.py
 :language: python
 :pyobject: run_firmware_mod
@@ -81,6 +84,7 @@ from shepherd_sheep.logger import set_verbosity
 from shepherd_sheep.shepherd_debug import ShepherdDebug
 # Note: probably some includes missing
 ```
+
 ```{literalinclude} ../../software/python-package/shepherd_sheep/__init__.py
 :language: python
 :pyobject: run_programmer

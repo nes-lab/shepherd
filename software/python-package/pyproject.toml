@@ -29,7 +29,7 @@ classifiers = [
 
 requires-python = ">= 3.11"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2026.06.1",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2026.10.2",  # limit due to newest features
     "click",
     "numpy",
     "python-periphery<2.0.0", # v2 has no persistence anymore
@@ -47,6 +47,7 @@ dependencies = [
     "greenlet",  # added here to allow sourcing from custom uv-index
     "zstandard",  # added here to allow sourcing from custom uv-index
     "pyzmq",  # added here to allow sourcing from custom uv-index
+    "orjson",
     # "bson", # needed for unpacking pickles from timeaware mongodb-server
     # bson has trouble in CI-pipeline from GH -> install in observer-role
 ]
@@ -84,7 +85,7 @@ shepherd-launcher = "shepherd_launcher:main"
 shepherd-watchdog = "shepherd_watchdog:main"
 
 [build-system]
-requires = ["uv_build>=0.11.0,<0.13.0"]
+requires = ["uv_build>=0.11.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -108,9 +109,12 @@ markers = [
 # opts: summary for all except passed, verbose result for each tests
 addopts = "-vvv --stepwise"
 # continue after fail: sudo pytest-3 --stepwise
-tmp_path_retention_policy = "none"
+tmp_path_retention_policy = "failed"
+# -> "none" deletes at the end of the session
+# -> "failed" cleans right after the test
 tmp_path_retention_count = 1
 # -> don't spam tempfs
+
 
 [tool.coverage.run]
 source = ["shepherd_sheep"]
@@ -143,4 +147,4 @@ rapidyaml = { index = "piwheels", marker = "platform_machine == 'armv7l'"}   # d
 rtoml = { index = "piwheels", marker = "platform_machine == 'armv7l'"} # not used ATM
 
 # temporary dev-versions of shepherd-packets
-# shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
+shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}

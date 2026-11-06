@@ -20,7 +20,6 @@ The included components and features are:
 
   - both circuits can handle 0 - 5 V with up to 50 mA current
   - LSB is ~ 200 nA and ~ 20 uV for voltage- and current-measurements
-
 - two target-ports for the emulator, user choice
 - two parallel power rails available for the targets (one with current measurement, switchable)
 - one default target with a nrf52-module (see below)
@@ -51,6 +50,7 @@ By keeping this part of the hardware separate from the main shepherd cape, we al
 | 2   | Voltage sensing input of harvest-circuitry |
 | 3   | (optional) custom voltage from spare DAC   |
 | 4   | Current sinking input of harvest-circuitry |
+
 :::
 
 ## Harvesting Sources
@@ -77,7 +77,6 @@ This specific transducer needs an adapter with
 
 - full bridge rectifier for the transducer (with low voltage drop)
 - resistive voltage divider for max 5V v_sense (MOhm-Range)
-
 
 ## Target Port
 
@@ -107,6 +106,7 @@ The target pcb connects to the shepherd cape via the dedicated headers P10 & P11
 | 16  | Program2-IO - Data for remote programming (SWD, SBW) or JTAG-TMS   |
 | 17  | +3V3, use for any additional infrastructure circuitry              |
 | 18  | Ground                                                             |
+
 :::
 
 Notes:

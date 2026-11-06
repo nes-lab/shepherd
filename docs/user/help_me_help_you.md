@@ -4,8 +4,8 @@ What to do if things don’t work as expected, or you are missing a desired feat
 
 - you read the provided guides carefully
 - your software is up-to-date
-    - this includes not only our provided software, but also
-    - python, libraries or the browser (when used)
+  - this includes not only our provided software, but also
+  - python, libraries or the browser (when used)
 
 If you checked your setup, feel free to open an issue at GitHub and describe your troubleshooting process.
 Templates for a bug-report and a feature-request are included in the Issue-Process - please provide that extra info and help the developer help you.

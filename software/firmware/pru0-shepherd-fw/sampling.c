@@ -284,6 +284,11 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
     __delay_cycles(1000u / TICK_INTERVAL_NS);
     adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_RANGE | RANGE_SEL_P125);
 
+    return;
+    // TODO: disabled for now - test below may misbehave
+    // REASON for the misbehave: cape may be powered off still - so we need a new
+    // flag from userspace that shows "powered_cape"
+
     /* Alert kernel module that this hw-unit seems to be not present
  	 * -> downside: doubles duration of adc-init
  	*/

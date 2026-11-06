@@ -30,12 +30,12 @@ The recorded data can be replayed to attached wireless sensor nodes, examining t
 
 **Features**
 
- - High-speed, high resolution current and voltage sensing
- - Technology-agnostic: Currently, solar and kinetic energy harvesting are supported
- - Remote programming/debugging of ARM Cortex-M MCUs using Serial-Wire-Debug
- - High resolution, synchronized GPIO tracing
- - Configurable, constant voltage power supply for attached sensor nodes
- - Level-translated serial connection to the attached sensor nodes
+- High-speed, high resolution current and voltage sensing
+- Technology-agnostic: Currently, solar and kinetic energy harvesting are supported
+- Remote programming/debugging of ARM Cortex-M MCUs using Serial-Wire-Debug
+- High resolution, synchronized GPIO tracing
+- Configurable, constant voltage power supply for attached sensor nodes
+- Level-translated serial connection to the attached sensor nodes
 
 For a detailed description see our [Paper](https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf) or the [official documentation](https://nes-lab.github.io/shepherd/).
 
@@ -107,6 +107,7 @@ Record two minutes of data:
 ```shell
 shepherd-herd harvester -d 120 -o recording.h5 -a mppt_voc
 ```
+
 The command starts the recording asynchronously and returns after all nodes have started recording.
 While the nodes are still recording (indicated by blinking of LED 1 and 2), prepare a directory on your local machine:
 
@@ -140,13 +141,13 @@ If you experience issues or require additional features, please get in touch via
 
 The following people have contributed to *shepherd*:
 
- - [Kai Geissdoerfer](https://www.researchgate.net/profile/Kai_Geissdoerfer)
- - [Mikolaj Chwalisz](https://www.tkn.tu-berlin.de/team/chwalisz/)
- - [Marco Zimmerling](https://wwwpub.zih.tu-dresden.de/~mzimmerl/)
- - [Justus Paulick](https://github.com/kugelbit)
- - [Boris Blokland](https://github.com/borro0)
- - [Jonas Kubicki](https://github.com/jonkub)
- - [Ingmar Splitt](https://github.com/nes-lab)
+- [Kai Geissdoerfer](https://www.researchgate.net/profile/Kai_Geissdoerfer)
+- [Mikolaj Chwalisz](https://www.tkn.tu-berlin.de/team/chwalisz/)
+- [Marco Zimmerling](https://wwwpub.zih.tu-dresden.de/~mzimmerl/)
+- [Justus Paulick](https://github.com/kugelbit)
+- [Boris Blokland](https://github.com/borro0)
+- [Jonas Kubicki](https://github.com/jonkub)
+- [Ingmar Splitt](https://github.com/nes-lab)
 
 ## Release-Procedure
 

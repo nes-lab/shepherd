@@ -4,7 +4,7 @@
 TODO: WORK IN PROGRESS
 :::
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_herd.Herd
     :members:
     :inherited-members:

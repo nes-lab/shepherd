@@ -13,7 +13,7 @@ It's also a playground for new ideas and tracking changes (improvements and regr
 
 ## BBB 2026-10-02 - trixie with py313
 
-```
+```text
 RUN with duration 60 s, Compression.null, random False
         Old F2RAM = 7.204 s, RAM2F = 11.804 s
         New F2RAM = 6.487 s, RAM2F = 5.882 s, RAM2Fts = 12.807
@@ -62,10 +62,9 @@ RUN with duration 60 s, Compression.gzip6, random True
         Size f_in = 44.062 MB, f_old = 44.065 MB, f_new = 42.534 MB, f_nts = 44.065 MB
 ```
 
-
 ## BBB 2026-09-25 - kernel 6.12.109 & 6.18.52
 
-```
+```text
 RUN with duration 60 s, Compression.null, random False
         Old F2RAM = 3.802 s, RAM2F = 10.507 s
         New F2RAM = 6.653 s, RAM2F = 5.690 s, RAM2Fts = 13.013
@@ -104,7 +103,7 @@ RUN with duration 60 s, Compression.gzip6, random True
 
 Mayor changes: active shuffle for datasets and optimized chunking for timestamps
 
-```
+```text
 RUN with duration 60 s, Compression.null, random False
         Old F2RAM = 3.882 s, RAM2F = 12.330 s
         New F2RAM = 5.589 s, RAM2F = 6.717 s, RAM2Fts = 13.437
@@ -140,6 +139,7 @@ RUN with duration 60 s, Compression.gzip6, random True
 ```
 
 Conclusion:
+
 - 20-50 % less time needed for storing
 - smaller files
 - tested kernel 4.19 and 6.1 with similar performance
@@ -150,7 +150,7 @@ Conclusion:
 
 Software versions
 
-```
+```text
 python             3.11.2
 
 h5py               3.16.0
@@ -162,7 +162,7 @@ pydantic_core      2.46.4
 
 Results
 
-```
+```text
 RUN with duration 60 s, Compression.null, random False
         Old F2RAM = 2.970 s, RAM2F = 11.593 s
         New F2RAM = 4.319 s, RAM2F = 7.033 s, RAM2Fts = 13.829
@@ -197,7 +197,7 @@ Analysis
 
 ## BBB 2023-12
 
-```
+```text
 RUN with duration 60 s, Compression.None, random False
     Old F2RAM = 3.863 s, RAM2F = 19.868 s
     New F2RAM = 8.583 s, RAM2F = 9.899 s, RAM2Fts = 24.901
@@ -226,7 +226,7 @@ RUN with duration 60 s, Compression.gzip1, random True
 
 ## BB AI 64 2023-12
 
-```
+```text
 RUN with duration 60 s, Compression.None, random False
     Old F2RAM = 0.331 s, RAM2F = 2.155 s
     New F2RAM = 0.374 s, RAM2F = 1.184 s, RAM2Fts = 1.514

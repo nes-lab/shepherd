@@ -211,12 +211,15 @@ class ShepherdEmulator(ShepherdIO):
             desc="Fill IV-Buffer",
             unit="n",
             leave=False,
+            mininterval=1,
         )
         for input_data in self.reader.read(
             end_n=self.buffer_segment_count,
             is_raw=True,
             omit_timestamps=True,
         ):
+            time.sleep(self.shared_mem.iv_inp.duration_chunk_s / 3)
+            # rate limit for testbed - ptp / eth-controller is currently easy to overwhelm
             if not self.shared_mem.iv_inp.write_iv(
                 data=IVTrace(voltage=input_data[1], current=input_data[2])
                 if isinstance(input_data, tuple)
@@ -225,7 +228,7 @@ class ShepherdEmulator(ShepherdIO):
                 verbose=False,
             ):
                 raise BufferError("Not enough space in buffer during initial fill.")
-            prog_bar.update(1)
+            prog_bar.update()
         return self
 
     def __exit__(
@@ -289,10 +292,11 @@ class ShepherdEmulator(ShepherdIO):
         set_stop(ts_end)
 
         prog_bar = tqdm(
-            total=int(10 * duration_s),
+            total=int(duration_s / self.shared_mem.iv_out.DURATION_CHUNK_S),  # chunk-count
             desc="Measurement",
             unit="n",
             leave=False,
+            mininterval=1.0,
         )
 
         # Main Loop
@@ -330,8 +334,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
-                    prog_bar.update(n=int(10 * data_iv.duration()))
-                    # TODO: this can't work - with the limiting tracers
+                    prog_bar.update()  # n=1
                     if data_iv.timestamp_s() >= ts_end:
                         log.debug("Out of bound timestamp collected -> begin to exit now")
                         leave_main_loop = True
@@ -381,7 +384,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
-                    prog_bar.update(n=int(10 * data_iv.duration()))
+                    prog_bar.update()  # n=1
                     if data_iv.timestamp_s() > ts_end:
                         log.debug("Out of bound timestamp collected -> will discard")
                         data_iv = None

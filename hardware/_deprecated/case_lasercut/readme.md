@@ -33,15 +33,16 @@ Area: 532 cm²
   - 2x POE-Splitter
   - 2x BBone
 - magnet-holder to fix
-    - var1: 15x3mm round, with 3.5mm hole, n45 -> screw-able
-    - var2: 20x10x1, N42, with adhesive, ~1.8kg
-    - var3: 10x5x1, N45, Adhesive, 700g,
+  - var1: 15x3mm round, with 3.5mm hole, n45 -> screw-able
+  - var2: 20x10x1, N42, with adhesive, ~1.8kg
+  - var3: 10x5x1, N45, Adhesive, 700g,
 
 ## Coordinates
 
 ### Bottom
 
 V-Stab
+
 - X = 136 - 82 - 3 - 3 -5 = +43
 - Y1 = +3
 - Y2 = +55
@@ -49,6 +50,7 @@ V-Stab
 ### Bottom & Top
 
 Vents
+
 - X1 = 13
 - X2 = 23
 - Y1 = 29 - 14 = 15
@@ -58,15 +60,18 @@ Vents
 ### Sides
 
 H-Rail
+
 - X = 136 - 3 - 3 - 5= + 125
 - Z1 = 96 - 3 - 25 - 3 = -65 (from top)
 - Z2 = 96 - 3 - 25 - 3 - 3 -9 = -53
 
 H-Arret:
+
 - X = 136 - 3 - 82 - 14 = +37
 - Z = 3 + 5 = -8 (from top)
 
 H-Front:
+
 - X = 3 + 1 = +4
 - Z1 = 3+ 3 = -6 (from top)
 - Z2 = 96 - 3- 3 -5 = -85
@@ -74,10 +79,12 @@ H-Front:
 ### Back
 
 NW
+
 - Y = 3 + 15 = 18
 - Z = 3 + 6 = 9
 
 SD
+
 - Y = 3 + 10 = 13
 - Z = 3+ 25 +2 = 30
 
@@ -89,23 +96,23 @@ SD
 
 ## BOX-Generators
 
-https://github.com/paulh-rnd/TabbedBoxMaker
-https://www.makercase.com/#/basicbox
-https://boxdesigner.connectionlab.org/
-https://makeabox.io/
-https://jeromeleary.com/laser/  -> Fav, but finger-sections are off ?!?
+<https://github.com/paulh-rnd/TabbedBoxMaker>
+<https://www.makercase.com/#/basicbox>
+<https://boxdesigner.connectionlab.org/>
+<https://makeabox.io/>
+<https://jeromeleary.com/laser/> -> Fav, but finger-sections are off ?!?
 
 ## Manufacturing
 
-https://www.formulor.de/
+<https://www.formulor.de/>
     -> matt, opak, mineral gray, 9643
     -> matt, opak, moonlight white, S2 1T41
     -> schwarz, opak, einseitig, matt, 9H01 SC
     -> mittelgrau, transparent 7C83 -> Fav
     -> weiß, milchig, WH02 -> Fav
-https://www.plexilaser.de/shop/Acrylglas-transparent-Eisblau
-https://www.plexilaser.de/shop/Acrylglas-satiniert-Duo-Night-Day -> Fav
-https://www.plexilaser.de/shop/Acrylglas-satiniert-Milchglasoptik -> Fav
+<https://www.plexilaser.de/shop/Acrylglas-transparent-Eisblau>
+<https://www.plexilaser.de/shop/Acrylglas-satiniert-Duo-Night-Day> -> Fav
+<https://www.plexilaser.de/shop/Acrylglas-satiniert-Milchglasoptik> -> Fav
 
 ## Assembling
 

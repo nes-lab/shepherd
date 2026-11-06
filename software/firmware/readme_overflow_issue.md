@@ -2,17 +2,16 @@
 
 - pru1-code compiles, but pru0 fails with ~ 3 kB overflow of program memory (8 kB)
 - disabling debug-symbols (`-g0`) does not change program memory, but size of elf-file gets reduced significantly
-	- pru1 fw size shrinks from > 40 kB to < 8 kB
+  - pru1 fw size shrinks from > 40 kB to < 8 kB
 - link-time-optimization helps somewhat (`-flto`, `-fuse-linker-plugin`)
-	- pru1 fw size shrinks from 7.38 kB to 6.30 kB
-	- pru0 overflow reduces from 3060 byte to 2690 byte
+  - pru1 fw size shrinks from 7.38 kB to 6.30 kB
+  - pru0 overflow reduces from 3060 byte to 2690 byte
 - disabling some debug code had just minimal change (-20 byte)
 - did read through gnupru github-issues, but found no clue
 - did read through large parts of gcc v12.1 doc (gcc.pdf) with no luck
 - enabling `-ffast-math` does nothing to our code-size (should only help with float-ops)
 
 [more details](./readme_overflow_issue.md)
-
 
 ### Overflow - help from dinuxbg
 
@@ -42,7 +41,7 @@ pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
 
 - same with `-fno-inline`
 
-```
+```text
 [small objects omitted]
 200019d8 000000a0 t converter_calc_out_power
 20000590 000000c0 t harvest_ivcurve_2_cv
@@ -66,7 +65,7 @@ pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
 
 - gnuprumcu size-hack
 
-```
+```text
 cd tools/pru-elf-2022.05.amd64/pru-elf/lib/device-specs
 sudo cp am335x.pru0 am335xl.pru0
 sudo nano am335xl.pru0
@@ -76,7 +75,7 @@ change target in makefile
 
 - analyze code-size with original u64-version, inline and size-hack for gnuprumcu
 
-```
+```text
 20002a38 00000038 T __pruabi_mpyll
 200029e4 00000054 T __gnu_ashldi3
 20002990 00000054 T __gnu_lshrdi3
@@ -97,7 +96,7 @@ change target in makefile
 
 - same with `-fno-inline`
 
-```
+```text
 20000198 0000000c t calibration_initialize
 200003b4 0000000c t get_state_log_intermediate
 2000018c 0000000c t simple_mutex_exit
@@ -164,14 +163,14 @@ change target in makefile
 ```
 
 - compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes.
-	- is this a self-made inline-fuckup?
-	- removing `inline` from our codebase brings overflow back to 2672 bytes
-	- that is strange!
+  - is this a self-made inline-fuckup?
+  - removing `inline` from our codebase brings overflow back to 2672 bytes
+  - that is strange!
 
 - direct compare of the biggest FNs
   - u64-heavy Fns grow by factor 1.6 to 2.4
 
-```
+```text
 u64 u32 x fn_name
 108 0a0 t converter_calc_out_power              -> 264 vs 160 bytes
     0c0 t harvest_ivcurve_2_cv
@@ -193,18 +192,17 @@ u64 u32 x fn_name
 218 218 t event_loop
 ```
 
-
 ### ~~Overflow - next steps (proposal)~~ -> obsolete, see readme.md
 
 - generate size-map of mem-regions
-	- GCC: `pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'`
-      - `pru-size gen_gcc/pru0-shepherd-fw.elf`
-    - CGT: should also be compatible with pru-nm or `pru-size gen/pru-shepherd-fw.out`
-	- do sizes look plausible?
-	- how does the result compare to Ti compiler?
-	- working pru1-compilation may provide clues - is it also increasing size?
+  - GCC: `pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'`
+    - `pru-size gen_gcc/pru0-shepherd-fw.elf`
+  - CGT: should also be compatible with pru-nm or `pru-size gen/pru-shepherd-fw.out`
+  - do sizes look plausible?
+  - how does the result compare to Ti compiler?
+  - working pru1-compilation may provide clues - is it also increasing size?
 - possible culprits
-	- u64-math may produce more complex routines
-	- [32 Bit registers](https://github.com/dinuxbg/gnupru/wiki/ABI) instead of 16 Bit -> `-mabi=ti` could be the solution, but fails
-		- abi=ti produces undefined references to memcpy and memset -> flag [can't use c std lib](https://gcc.gnu.org/onlinedocs/gcc-12.1.0/gcc/PRU-Options.html#PRU-Options)
-	- accidental included soft-float emulation? no way found to prevent this in GCC
+  - u64-math may produce more complex routines
+  - [32 Bit registers](https://github.com/dinuxbg/gnupru/wiki/ABI) instead of 16 Bit -> `-mabi=ti` could be the solution, but fails
+    - abi=ti produces undefined references to memcpy and memset -> flag [can't use c std lib](https://gcc.gnu.org/onlinedocs/gcc-12.1.0/gcc/PRU-Options.html#PRU-Options)
+  - accidental included soft-float emulation? no way found to prevent this in GCC

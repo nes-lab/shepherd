@@ -30,12 +30,11 @@ from shepherd_core.data_models.base.calibration import CalibrationSeries as CalS
 from shepherd_core.data_models.content.enum_datatypes import Compression
 from shepherd_core.data_models.experiment import SystemLogging
 from shepherd_core.data_models.experiment import UartLogging
+from shepherd_core.data_models.experiment.observer_features import samplerates_supported
 from shepherd_core.writer import Writer as CoreWriter
 
 from .h5_monitor_kernel import KernelMonitor
-from .h5_monitor_phc2sys import PHC2SYSMonitor
 from .h5_monitor_phc2sys_log import PHC2SYSLogMonitor
-from .h5_monitor_ptp import PTPMonitor
 from .h5_monitor_ptp_log import PTPLogMonitor
 from .h5_monitor_sheep import SheepMonitor
 from .h5_monitor_sysutil import SysUtilMonitor
@@ -63,8 +62,6 @@ class Writer(CoreWriter):
         force_overwrite (bool): Overwrite existing file with the same name
     """
 
-    RATES_SUPPORTED = (10, 100, 1_000, 100_000)
-
     def __init__(  # noqa: PLR0917
         self,
         file_path: Path,
@@ -80,15 +77,15 @@ class Writer(CoreWriter):
         verbose: bool | None = True,
     ) -> None:
         # hopefully overwrite defaults from Reader
-        self.samplerate_sps: int = 10**9 // commons.SAMPLE_INTERVAL_NS
+        self.samplerate_sps: int = commons.SAMPLE_RATE_DEFAULT_SPS
         self.reduce: bool = False
         self.reduction_factor: int = 1
         self.iv_discard: bool = False
         if cfg_pwr is not None:
-            if cfg_pwr.samplerate not in self.RATES_SUPPORTED:
+            if cfg_pwr.samplerate not in samplerates_supported:
                 raise ValueError(
                     "Data-rate for Power must be in [Hz, Samples-per-second]: %s",
-                    self.RATES_SUPPORTED,
+                    samplerates_supported,
                 )
             self.reduce: bool = cfg_pwr.samplerate != self.samplerate_sps
             self.reduction_factor: int = self.samplerate_sps // cfg_pwr.samplerate
@@ -256,9 +253,10 @@ class Writer(CoreWriter):
         if sys is not None and sys.kernel:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.time_sync:
-            self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
+            # TODO: remove one of the two versions (log vs data)
+            # deactivated PTPMonitor(self.ptp_grp, self._compression))
             self.monitors.append(PTPLogMonitor(self.ptp_log_grp, self._compression))
-            self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))
+            # deactivated PHC2SYSMonitor(self.phc_grp, self._compression))
             self.monitors.append(PHC2SYSLogMonitor(self.phc_log_grp, self._compression))
             self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
         if sys is not None and sys.sys_util:

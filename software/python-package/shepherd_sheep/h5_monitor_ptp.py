@@ -16,18 +16,18 @@ class PTPMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-        backlog: int = 60,
+        backlog: int = 10,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
-        self.data.create_dataset(
+        self.ds_values = self.data.create_dataset(
             name="values",
-            shape=(self.increment_size, 3),
+            shape=(self.ds_size, 3),
             dtype="i8",
             maxshape=(None, 3),
             chunks=(self.chunk_size, 3),
         )
-        self.data["values"].attrs["unit"] = "ns, Hz, ns"
-        self.data["values"].attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
+        self.ds_values.attrs["unit"] = "ns, Hz, ns"
+        self.ds_values.attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -37,6 +37,9 @@ class PTPMonitor(Monitor):
             f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
+            # "--since=-10s",  # noqa: ERA001
+            # sensitive to time-jumps
+            "--utc",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603
             command,
@@ -64,7 +67,7 @@ class PTPMonitor(Monitor):
     ) -> None:
         self.shutdown_thread()
         self.process.terminate()
-        self.data["values"].resize((self.position, 3))
+        self.ds_values.resize((self.position, 3))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -94,17 +97,16 @@ class PTPMonitor(Monitor):
             except ValueError:
                 continue
             try:
-                data_length = len(self.data["time"])  # a faster .shape[0]
-                if self.position >= data_length:
-                    data_length += self.increment_size
-                    self.data["time"].resize((data_length,))
-                    self.data["values"].resize((data_length, 3))
+                if self.position >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_values.resize((self.ds_size, 3))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.data["time"][self.position] = time_ns
-                self.data["values"][self.position, :] = values[0:3]
+                self.ds_time[self.position] = time_ns
+                self.ds_values[self.position, :] = values[0:3]
                 self.position += 1
             except (OSError, KeyError):
                 log.error(
@@ -119,7 +121,7 @@ class PTPMonitor(Monitor):
         if self.position == 0:
             log.warning("[%s] Service not running? No data collected yet", type(self).__name__)
             return
-        offset_ns, freq_Hz, _ = self.data["values"][self.position - 1, :]
+        offset_ns, freq_Hz, _ = self.ds_values[self.position - 1, :]
         if abs(offset_ns) > 500_000:
             log.warning(
                 "[%s] Sync-Offset is unexpected high (%d us)",
@@ -137,10 +139,10 @@ class PTPMonitor(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 30
         datarate_sps = 1
-        data_length = max(
-            len(self.data["time"]),
+        self.ds_size = max(
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["values"].resize((data_length, 3))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_values.resize((self.ds_size, 3))
