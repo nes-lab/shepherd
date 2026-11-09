@@ -17,6 +17,8 @@ class KernelMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         backlog: int = 10,
+        *,
+        ignore_unrelated_errors: bool = True,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.52)
 
@@ -39,6 +41,7 @@ class KernelMonitor(Monitor):
             "0=emerg, 1=alert, 2=crit, 3=err, 4=warning, 5=notice, 6=info, 7=debug"
         )
         self.report_errors = False
+        self.report_unrelated_errors = not ignore_unrelated_errors
         # gets activated with .check_status()
 
         command = [
@@ -106,11 +109,15 @@ class KernelMonitor(Monitor):
                 # TODO: lots of potential here -> batch writes (collect for 1..10 s)
             except OSError:
                 log.error(
-                    "[%s] Caught a Write Error for Line: %s",
+                    "[%s] Caught a Write-Error for Line: %s",
                     type(self).__name__,
                     data["MESSAGE"],
                 )
-            if prio < 4 and self.report_errors:
+            if (
+                prio < 4
+                and self.report_errors
+                and (self.report_unrelated_errors or "shp" in data["MESSAGE"])
+            ):
                 log.error(
                     "[%s] received prio%d error: %s ", type(self).__name__, prio, data["MESSAGE"]
                 )

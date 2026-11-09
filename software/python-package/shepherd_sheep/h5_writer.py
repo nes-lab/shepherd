@@ -251,13 +251,31 @@ class Writer(CoreWriter):
         uart: UartLogging | None = None,
     ) -> None:
         if sys is not None and sys.kernel:
-            self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
+            self.monitors.append(
+                KernelMonitor(
+                    self.kernel_grp,
+                    self._compression,
+                    ignore_unrelated_errors=sys.ignore_unrelated_errors,
+                )
+            )
         if sys is not None and sys.time_sync:
             # TODO: remove one of the two versions (log vs data)
             # deactivated PTPMonitor(self.ptp_grp, self._compression))
-            self.monitors.append(PTPLogMonitor(self.ptp_log_grp, self._compression))
+            self.monitors.append(
+                PTPLogMonitor(
+                    self.ptp_log_grp,
+                    self._compression,
+                    sync_offset_threshold=sys.sync_offset_threshold,
+                )
+            )
             # deactivated PHC2SYSMonitor(self.phc_grp, self._compression))
-            self.monitors.append(PHC2SYSLogMonitor(self.phc_log_grp, self._compression))
+            self.monitors.append(
+                PHC2SYSLogMonitor(
+                    self.phc_log_grp,
+                    self._compression,
+                    sync_offset_threshold=sys.sync_offset_threshold,
+                )
+            )
             self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
         if sys is not None and sys.sys_util:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))

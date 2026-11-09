@@ -17,6 +17,7 @@ class PTPLogMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         backlog: int = 10,  # ~ 10 s
+        sync_offset_threshold: float = 10e-6,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
 
@@ -40,6 +41,7 @@ class PTPLogMonitor(Monitor):
         )
         self.report_errors = False
         # gets activated with .check_status()
+        self.offset_threshold: int = int(10**9 * sync_offset_threshold)
 
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -132,7 +134,7 @@ class PTPLogMonitor(Monitor):
                     freq_Hz = int(words[i_start + 4])
                 except ValueError:
                     continue
-                if abs(offset_ns) > 50_000:
+                if abs(offset_ns) > self.offset_threshold:
                     log.error(
                         "[%s] Sync-Offset is unexpected high (%.3f us)",
                         type(self).__name__,
