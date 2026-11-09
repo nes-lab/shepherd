@@ -1041,6 +1041,7 @@ class Herd:
             content_names = tb_client.list_resource_names(model_type=content_type)
             log.debug(f"Will scan {len(content_names)} {content_type}-models")
             for name in content_names:
+                log.debug(f" -> checking {name}")
                 content_dict = tb_client.get_resource_item(model_type=content_type, name=name)
                 content = content_class(**content_dict)
                 if hasattr(content, "exists") and not content.exists():
