@@ -115,12 +115,14 @@ def disable_ntp() -> None:
         ["/usr/bin/systemctl", "is-active", "--quiet", "systemd-timesyncd.service"],
         timeout=20,
         check=False,
+        shell=False,
     ).returncode
     if ret == 0:
         subprocess.run(
             ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
             timeout=20,
             check=False,
+            shell=False,
         )
         log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
@@ -141,6 +143,7 @@ def resync_ptp() -> bool:
                 command,
                 timeout=10,
                 check=False,
+                shell=False,
             ).returncode
             != 0
         )
@@ -163,6 +166,7 @@ def mount_network_fs() -> bool:
                 command,
                 timeout=20,
                 check=False,
+                shell=False,
             ).returncode
             != 0
         )

@@ -101,6 +101,7 @@ class Watchdog:
             ["/usr/bin/sudo", "/usr/sbin/reboot"],
             timeout=3,
             check=False,
+            shell=False,
         )
 
     def check_connection(self) -> None:
