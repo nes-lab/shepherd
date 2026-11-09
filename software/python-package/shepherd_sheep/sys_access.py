@@ -116,6 +116,7 @@ def disable_ntp() -> None:
         timeout=20,
         check=False,
         shell=False,
+        capture_output=False,
     ).returncode
     if ret == 0:
         subprocess.run(
@@ -123,6 +124,7 @@ def disable_ntp() -> None:
             timeout=20,
             check=False,
             shell=False,
+            capture_output=False,
         )
         log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
@@ -144,6 +146,7 @@ def resync_ptp() -> bool:
                 timeout=10,
                 check=False,
                 shell=False,
+                capture_output=False,
             ).returncode
             != 0
         )
@@ -167,6 +170,7 @@ def mount_network_fs() -> bool:
                 timeout=20,
                 check=False,
                 shell=False,
+                capture_output=False,
             ).returncode
             != 0
         )
@@ -184,6 +188,7 @@ def get_gpio_info() -> list[str]:
         check=False,
         shell=False,
         capture_output=True,
+        text=True,
     )
     if ret.returncode != 0 or not isinstance(ret.stdout, bytes):
         msg = f"Gpioinfo failed, got: {ret.stdout}"

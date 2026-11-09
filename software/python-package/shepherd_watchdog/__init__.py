@@ -102,6 +102,7 @@ class Watchdog:
             timeout=3,
             check=False,
             shell=False,
+            capture_output=False,
         )
 
     def check_connection(self) -> None:
