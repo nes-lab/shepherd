@@ -107,7 +107,10 @@ def test_emulation(
     emulator.wait_for_start(15)
     for _, dsv, dsc in shp_reader.read(start_n=emulator.buffer_segment_count, is_raw=True):
         while not emulator.shared_mem.iv_inp.write_iv(
-            data=IVTrace(voltage=dsv, current=dsc), cal=emulator.cal_pru, verbose=True
+            data=IVTrace(voltage=dsv, current=dsc),
+            cal=emulator.cal_pru,
+            verbose=True,
+            # TODO: test rescale_factor?
         ):
             data_ = emulator.shared_mem.iv_out.request_chunk(verbose=True)
             if data_:

@@ -213,6 +213,7 @@ class SharedMemIVInput:
         self,
         data: IVTrace | np.ndarray,
         cal: CalibrationSeries | None,
+        rescale_factor: float = 1,
         *,
         verbose: bool = False,
     ) -> bool:
@@ -238,6 +239,10 @@ class SharedMemIVInput:
         else:
             # reshape just to be safe - its cheap
             iv_data = data.reshape((len_data, 2), order="C")
+
+        # apply custom scaling, if wanted
+        if rescale_factor != 1.0:
+            iv_data[:, 1] = rescale_factor * iv_data[:, 1]
 
         # Seek buffer location in memory and skip header
         iv_data = np.ascontiguousarray(iv_data)

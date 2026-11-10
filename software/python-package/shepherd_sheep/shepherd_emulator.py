@@ -225,6 +225,7 @@ class ShepherdEmulator(ShepherdIO):
                 if isinstance(input_data, tuple)
                 else input_data,
                 cal=self.cal_pru,
+                rescale_factor=self.cfg.eenv_rescale_factor,
                 verbose=False,
             ):
                 raise BufferError("Not enough space in buffer during initial fill.")
@@ -320,6 +321,7 @@ class ShepherdEmulator(ShepherdIO):
                 if isinstance(input_data, tuple)
                 else input_data,
                 cal=self.cal_pru,
+                rescale_factor=self.cfg.eenv_rescale_factor,
                 verbose=self.verbose_extra,
             ):
                 data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
