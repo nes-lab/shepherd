@@ -286,6 +286,68 @@ def test_emulate_intermediate(tmp_path: Path, data_h5: Path) -> None:
 
 @pytest.mark.hardware
 @pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+def test_emulate_eenv_start_offset(tmp_path: Path, data_h5: Path) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        eenv_time_start_offset=1,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        power_tracing=PowerTracing(),
+        gpio_tracing=None,
+        uart_logging=None,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0] - 100_000
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+def test_emulate_eenv_rescaling(tmp_path: Path, data_h5: Path) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        eenv_rescale_factor=10,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        power_tracing=PowerTracing(),
+        gpio_tracing=None,
+        uart_logging=None,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
+        assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
+        # TODO: calc energy and compare? can be wrong without target
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 @pytest.mark.usefixtures("_shepherd_up")
 def test_target_pins() -> None:

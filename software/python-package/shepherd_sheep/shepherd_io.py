@@ -125,8 +125,8 @@ class ShepherdIO:
         self.trace_gpio = trace_gpio
 
         # placeholders
-        self.samples_per_segment = Reader.CHUNK_SAMPLES_N
-        self.segment_period_s: float = self.samples_per_segment * commons.SAMPLE_INTERVAL_S
+        self.input_chunk_size = Reader.CHUNK_SAMPLES_N
+        self.segment_period_s: float = self.input_chunk_size * commons.SAMPLE_INTERVAL_S
         self.shared_mem: SharedMemory | None = None
 
     def __del__(self) -> None:
@@ -269,7 +269,7 @@ class ShepherdIO:
         self.shared_mem = SharedMemory(
             self.trace_gpio,
             start_timestamp_ns=int(1e9 * start_time),
-            n_samples_per_segment=self.samples_per_segment,
+            n_samples_per_segment=self.input_chunk_size,
         )
         self.shared_mem.__enter__()
 
