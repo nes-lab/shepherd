@@ -188,13 +188,13 @@ def get_gpio_info() -> list[str]:
         check=False,
         shell=False,
         capture_output=True,
-        text=True,
+        text=True,  # str instead of bytes
     )
-    if ret.returncode != 0 or not isinstance(ret.stdout, bytes):
+    if ret.returncode != 0 or not isinstance(ret.stdout, str):
         msg = f"Gpioinfo failed, got: {ret.stdout}"
         raise ValueError(msg)
 
-    values = ret.stdout.decode().split("\n")
+    values = ret.stdout.split("\n")
     if len(values) < 60:
         msg = f"Gpioinfo failed, got not enough info: {values}"
         raise ValueError(msg)
