@@ -385,8 +385,7 @@ def bench_emu_sweep_datarates() -> None:
                     protocol=ProgrammerProtocol.SWD,
                 )
                 run_programmer(cfg)
-                generate_harvest_file(random=False)
-                path_input = generate_shepherd_file(Compression.lzf, random=False, scaled=True)
+                path_input = generate_harvest_file(random=False)
                 time_start = int(time.time() + 30)
                 cfg = EmulationTask(
                     input_path=path_input,
