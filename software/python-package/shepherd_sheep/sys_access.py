@@ -226,7 +226,12 @@ def gpio_name_2_num(name: str | int) -> int:
 
     global gpio_data  # noqa: PLW0603
     if gpio_data is None:
-        gpio_data = get_gpio_info()
+        try:
+            gpio_data = get_gpio_info()
+        except ValueError:
+            # allow exception-free path for unit-testing
+            log.warning("Gpioinfo failed -> NOT Okay on BeagleBone!")
+            return 0
 
     global gpio_offset  # noqa: PLW0603
     if gpio_offset is None:
