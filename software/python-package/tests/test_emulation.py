@@ -105,7 +105,7 @@ def test_emulation(
 ) -> None:
     emulator.start(wait_blocking=False)
     emulator.wait_for_start(15)
-    for _, dsv, dsc in shp_reader.read(start_n=emulator.buffer_segment_count, is_raw=True):
+    for _, dsv, dsc in shp_reader.read(start_n=emulator.init_buffer_last_chunk, is_raw=True):
         while not emulator.shared_mem.iv_inp.write_iv(
             data=IVTrace(voltage=dsv, current=dsc),
             cal=emulator.cal_pru,
@@ -118,7 +118,7 @@ def test_emulation(
             else:
                 time.sleep(emulator.segment_period_s / 2)
 
-    for _ in range(emulator.buffer_segment_count):
+    for _ in range(emulator.init_buffer_last_chunk):
         data_ = emulator.shared_mem.iv_out.request_chunk(verbose=True)
         if data_:
             writer.write_iv_buffer(data_)
