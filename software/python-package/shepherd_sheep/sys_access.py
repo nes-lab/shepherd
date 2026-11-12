@@ -115,12 +115,16 @@ def disable_ntp() -> None:
         ["/usr/bin/systemctl", "is-active", "--quiet", "systemd-timesyncd.service"],
         timeout=20,
         check=False,
+        shell=False,
+        capture_output=False,
     ).returncode
     if ret == 0:
         subprocess.run(
             ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
             timeout=20,
             check=False,
+            shell=False,
+            capture_output=False,
         )
         log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
@@ -141,6 +145,8 @@ def resync_ptp() -> bool:
                 command,
                 timeout=10,
                 check=False,
+                shell=False,
+                capture_output=False,
             ).returncode
             != 0
         )
@@ -163,6 +169,8 @@ def mount_network_fs() -> bool:
                 command,
                 timeout=20,
                 check=False,
+                shell=False,
+                capture_output=False,
             ).returncode
             != 0
         )
@@ -174,21 +182,19 @@ gpio_offset: int | None = None
 
 
 def get_gpio_info() -> list[str]:
-    if not kernel_module_is_active():
-        # TODO: this should prevent running the FN on other systems
-        return []
     ret = subprocess.run(
         ["/usr/bin/sudo", "/usr/bin/gpioinfo"],
         timeout=10,
         check=False,
         shell=False,
         capture_output=True,
+        text=True,  # str instead of bytes
     )
-    if ret.returncode != 0 or not isinstance(ret.stdout, bytes):
+    if ret.returncode != 0 or not isinstance(ret.stdout, str):
         msg = f"Gpioinfo failed, got: {ret.stdout}"
         raise ValueError(msg)
 
-    values = ret.stdout.decode().split("\n")
+    values = ret.stdout.split("\n")
     if len(values) < 60:
         msg = f"Gpioinfo failed, got not enough info: {values}"
         raise ValueError(msg)
@@ -217,13 +223,15 @@ def gpio_name_2_num(name: str | int) -> int:
     if isinstance(name, int):
         # keep backward compat for deprecated num-system (i.e. gpio 68)
         return name
-    if not kernel_module_is_active():
-        # TODO: this should prevent running the FN on other systems
-        return 0
 
     global gpio_data  # noqa: PLW0603
     if gpio_data is None:
-        gpio_data = get_gpio_info()
+        try:
+            gpio_data = get_gpio_info()
+        except ValueError:
+            # allow exception-free path for unit-testing
+            log.warning("Gpioinfo failed -> NOT Okay on BeagleBone!")
+            return 0
 
     global gpio_offset  # noqa: PLW0603
     if gpio_offset is None:

@@ -1,0 +1,28 @@
+# /etc/systemd/system/tc-eth0.service
+# install with: systemctl enable --now tc-eth0.service
+[Unit]
+Description=Egress shaping on eth0 for PTP headroom
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# start with clean slate ("-" allows to fail)
+ExecStartPre=-/sbin/tc qdisc del dev eth0 root
+# pre-config
+ExecStart=/sbin/tc qdisc add dev eth0 root handle 1: htb default 10
+ExecStart=/sbin/tc class add dev eth0 parent 1: classid 1:1  htb rate 80mbit
+# General traffic
+ExecStart=/sbin/tc class add dev eth0 parent 1:1 classid 1:10 htb rate 60mbit prio 1
+# PTP (port 319, 320)
+ExecStart=/sbin/tc class add dev eth0 parent 1:1 classid 1:20 htb rate 10mbit ceil 100mbit prio 0
+ExecStart=/sbin/tc filter add dev eth0 protocol ip parent 1: prio 1 u32 match ip dport 319 0xfffe flowid 1:20
+
+# verify via checking stats
+# sudo tc -s qdisc show dev eth0
+# sudo tc -s class show dev eth0
+
+[Install]
+WantedBy=multi-user.target

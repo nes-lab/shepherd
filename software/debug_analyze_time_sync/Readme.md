@@ -30,7 +30,7 @@ For install directly from GitHub-Sources (here `dev`-branch):
 
 ## Expected Data-Format
 
-```
+```text
 Time[s], Channel 0, Channel 1
 0.000000000000000, 1, 1
 7.642110550000000, 1, 0

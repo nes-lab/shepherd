@@ -10,10 +10,10 @@ A good starting point for online literature:
 
 ## Kernel 6.1
 
-- https://elixir.bootlin.com/linux/v6.1.83/A/ident/memremap
-- https://www.kernel.org/doc/html/v6.1/core-api/index.html#
+- <https://elixir.bootlin.com/linux/v6.1.83/A/ident/memremap>
+- <https://www.kernel.org/doc/html/v6.1/core-api/index.html#>
 
-DevLog for moving codebase to v6.1: https://github.com/nes-lab/shepherd/issues/11
+DevLog for moving codebase to v6.1: <https://github.com/nes-lab/shepherd/issues/11>
 
 ## Debugging
 

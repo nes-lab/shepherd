@@ -20,11 +20,11 @@ The models offer
 
 This category includes configuration-models for setting up an experiment. Part of the sub-systems are in the next section [](#observer-capabilities).
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.experiment.Experiment
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.experiment.TargetConfig
 ```
 
@@ -34,21 +34,21 @@ These are some of the sub-systems for configuring [experiments](#experiment) and
 
 [Link to Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/experiment)
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.experiment.PowerTracing
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.experiment.GpioTracing
 ```
 
-```
+```text
 deactiveated due to Error (TODO)
 .. autopydantic_model:: shepherd_core.data_models.experiment.GpioActuation
 .. autopydantic_model:: shepherd_core.data_models.experiment.GpioLevel
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.experiment.SystemLogging
 ```
 
@@ -58,19 +58,19 @@ Reusable user-defined meta-data for fw, h5 and vsrc-definitions.
 
 [Link to Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/content)
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.content.EnergyEnvironment
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.content.Firmware
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.content.VirtualHarvesterConfig
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.content.VirtualSourceConfig
 ```
 
@@ -80,26 +80,26 @@ These are digestible configs for shepherd-herd or -sheep.
 
 [Link to Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/experiment)
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.HarvestTask
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.EmulationTask
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.FirmwareModTask
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.ProgrammingTask
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.ObserverTasks
 ```
 
-```{eval-rst}
+```text {eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.TestbedTasks
 ```

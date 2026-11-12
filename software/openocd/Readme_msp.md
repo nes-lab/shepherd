@@ -17,35 +17,37 @@
   - PIF (parallel port) programmer for GPIO is available, BUT it only supports JTAG
   - it also seems
 - Putting a raspberry pico in between as a programmer would also work
-  - Pi-Pico-Sbw https://github.com/bigjosh/pi-pico-sbw
-  - could leverage https://github.com/bigjosh/pi-pico-sbw/blob/main2/mpy/sbw_native.c
+  - Pi-Pico-Sbw <https://github.com/bigjosh/pi-pico-sbw>
+  - could leverage <https://github.com/bigjosh/pi-pico-sbw/blob/main2/mpy/sbw_native.c>
 
 ### OpenOCD
 
 - simplelink (not our targets)
-  - https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/simplelink-openocd/latest/index_FDS.html
+  - <https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/simplelink-openocd/latest/index_FDS.html>
 - TI OpenOCD (also not our targets)
-  - https://software-dl.ti.com/ccs/esd/vscode/ti-embedded-debug/ti-openocd.html
-  - https://github.com/TexasInstruments/ti-openocd
-- official mirror: https://github.com/openocd-org/openocd/
+  - <https://software-dl.ti.com/ccs/esd/vscode/ti-embedded-debug/ti-openocd.html>
+  - <https://github.com/TexasInstruments/ti-openocd>
+- official mirror: <https://github.com/openocd-org/openocd/>
 - adapt SBW to openOCD?
-  - analog to https://github.com/arduino/OpenOCD/blob/c404ff5d3a2ec568daa106455845dd403b08dab4/src/target/adi_v5_swd.c
-  - patchguide https://openocd.org/doc-release/doxygen/patchguide.html
+  - analog to <https://github.com/arduino/OpenOCD/blob/c404ff5d3a2ec568daa106455845dd403b08dab4/src/target/adi_v5_swd.c>
+  - patchguide <https://openocd.org/doc-release/doxygen/patchguide.html>
   - probably not feasible
 
 ### MSPDebug
 
-https://dlbeer.co.nz/mspdebug/
-https://github.com/dlbeer/mspdebug
+<https://dlbeer.co.nz/mspdebug/>
+<https://github.com/dlbeer/mspdebug>
 
 Olimex Programmers
+
 - MSP430-JTAG-TINY
-  - https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-TINY-V2/
+  - <https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-TINY-V2/>
 - MSP430-JTAG-ISO
-  - https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-ISO/ (obsolete)
-  - https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-ISO-MK2/
+  - <https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-ISO/> (obsolete)
+  - <https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-ISO-MK2/>
 
 There seems to be a [device_gpio & device_bp](https://github.com/dlbeer/mspdebug/tree/v0.26/drivers/pif.h)
+
 - pif is parallel port, bp is bus-pirate
 - device_gpio uses [/sys/class/gpio](https://github.com/dlbeer/mspdebug/tree/v0.26/drivers/pif.c#L445)
 - HOW? `mspdebug --help` does not list GPIO. change was 12 years old, but apt-version is 13 years old ...
@@ -71,8 +73,8 @@ sudo make install WITHOUT_READLINE=1
 /usr/local/bin/mspdebug --version
 ```
 
-
 TODO:
+
 - adapt gpio-driver of openOCD for mspdebug?
 - sbw_transport
 - sbw_jtag

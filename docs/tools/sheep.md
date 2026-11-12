@@ -13,7 +13,7 @@ The tool has integrated help-functionality. For a full list of supported command
 
 The command-line Interface is as follows:
 
-```{eval-rst}
+```text {eval-rst}
 .. click:: shepherd_herd.herd_cli:cli
    :prog: shepherd-sheep
    :nested: full

@@ -105,9 +105,12 @@ def test_emulation(
 ) -> None:
     emulator.start(wait_blocking=False)
     emulator.wait_for_start(15)
-    for _, dsv, dsc in shp_reader.read(start_n=emulator.buffer_segment_count, is_raw=True):
+    for _, dsv, dsc in shp_reader.read(start_n=emulator.init_buffer_last_chunk, is_raw=True):
         while not emulator.shared_mem.iv_inp.write_iv(
-            data=IVTrace(voltage=dsv, current=dsc), cal=emulator.cal_pru, verbose=True
+            data=IVTrace(voltage=dsv, current=dsc),
+            cal=emulator.cal_pru,
+            verbose=True,
+            # TODO: test rescale_factor?
         ):
             data_ = emulator.shared_mem.iv_out.request_chunk(verbose=True)
             if data_:
@@ -115,7 +118,7 @@ def test_emulation(
             else:
                 time.sleep(emulator.segment_period_s / 2)
 
-    for _ in range(emulator.buffer_segment_count):
+    for _ in range(emulator.init_buffer_last_chunk):
         data_ = emulator.shared_mem.iv_out.request_chunk(verbose=True)
         if data_:
             writer.write_iv_buffer(data_)
@@ -279,6 +282,68 @@ def test_emulate_intermediate(tmp_path: Path, data_h5: Path) -> None:
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
         assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
         assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+def test_emulate_eenv_start_offset(tmp_path: Path, data_h5: Path) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        eenv_time_start_offset=1,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        power_tracing=PowerTracing(),
+        gpio_tracing=None,
+        uart_logging=None,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0] - 100_000
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+def test_emulate_eenv_rescaling(tmp_path: Path, data_h5: Path) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        eenv_rescale_factor=10,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        power_tracing=PowerTracing(),
+        gpio_tracing=None,
+        uart_logging=None,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
+        assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
+        # TODO: calc energy and compare? can be wrong without target
 
 
 @pytest.mark.hardware

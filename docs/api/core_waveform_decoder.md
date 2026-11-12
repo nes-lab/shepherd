@@ -14,7 +14,7 @@ TODO: WORK IN PROGRESS
 
 ## UART
 
-```{eval-rst}
+```text {eval-rst}
 .. autoclass:: shepherd_core.decoder_waveform.Uart
     :members:
     :inherited-members:

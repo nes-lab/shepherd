@@ -74,7 +74,8 @@ class ShepherdEmulator(ShepherdIO):
         if self.reader.get_mode() != "harvester":
             log.error("Input-File has wrong mode (%s != harvester)", self.reader.get_mode())
 
-        self.samples_per_segment = self.reader.CHUNK_SAMPLES_N
+        self.input_chunk_len = self.reader.CHUNK_SAMPLES_N  # TODO: make it larger?
+        self.init_buffer_last_chunk: int = 0  # just a placeholder
         cal_inp = self.reader.get_calibration_data()
 
         # PRU expects values in SI: uV and nV
@@ -202,30 +203,46 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.store_config(self.cfg)
 
         # Prefill emulator with data
-        self.buffer_segment_count = math.floor(
-            commons.BUFFER_IV_INP_SAMPLES_N // self.samples_per_segment
+        init_buffer_start_chunk = (
+            self.reader.calc_sample_offset(time_offset=self.cfg.eenv_time_start_offset)
+            // self.input_chunk_len
         )
-        log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
+        init_buffer_chunk_count = commons.BUFFER_IV_INP_SAMPLES_N // self.reader.CHUNK_SAMPLES_N
+        self.init_buffer_last_chunk = init_buffer_start_chunk + init_buffer_chunk_count
+        # last chunk can be after file-runtime -> will be handled in read()
+        log.debug(
+            "Begin initial fill of IV-Buffer (segments[%d:%d], n=%d)",
+            init_buffer_start_chunk,
+            self.init_buffer_last_chunk,
+            init_buffer_chunk_count,
+        )
         prog_bar = tqdm(
-            total=self.buffer_segment_count,
+            total=init_buffer_chunk_count,
             desc="Fill IV-Buffer",
             unit="n",
             leave=False,
+            mininterval=1,
         )
         for input_data in self.reader.read(
-            end_n=self.buffer_segment_count,
+            start_n=init_buffer_start_chunk,
+            end_n=self.init_buffer_last_chunk,
+            n_samples_per_chunk=self.input_chunk_len,
             is_raw=True,
             omit_timestamps=True,
         ):
+            time.sleep(self.shared_mem.iv_inp.duration_chunk_s / 3)
+            # rate limit for testbed - ptp / eth-controller is currently easy to overwhelm
             if not self.shared_mem.iv_inp.write_iv(
                 data=IVTrace(voltage=input_data[1], current=input_data[2])
                 if isinstance(input_data, tuple)
                 else input_data,
                 cal=self.cal_pru,
+                rescale_factor=self.cfg.eenv_rescale_factor,
                 verbose=False,
             ):
                 raise BufferError("Not enough space in buffer during initial fill.")
-            prog_bar.update(1)
+            prog_bar.update()
+        prog_bar.close()
         return self
 
     def __exit__(
@@ -259,10 +276,14 @@ class ShepherdEmulator(ShepherdIO):
         duration_s = sys.float_info.max
         if self.cfg.duration is not None:
             duration_s = int(self.cfg.duration.total_seconds())
-            log.debug("Duration = %.1f s (configured runtime)", duration_s)
-        if self.reader.runtime_s < duration_s:
-            duration_s = int(self.reader.runtime_s)
-            log.debug("Duration = %.1f s (runtime of input file)", duration_s)
+            log.debug("Duration = %.1f s (limited by runtime-param)", duration_s)
+        eenv_duration_s = int(max(0, self.reader.runtime_s - self.cfg.eenv_time_start_offset))
+        if eenv_duration_s < duration_s:
+            duration_s = eenv_duration_s
+            log.debug("Duration = %.1f s (limited by input file)", duration_s)
+        if duration_s < 1:
+            log.error("Resulting duration is less than 1 second -> will exit")
+            return
         if self.writer is not None:
             self.writer.preshape_by_runtime(duration_s)
 
@@ -289,19 +310,21 @@ class ShepherdEmulator(ShepherdIO):
         set_stop(ts_end)
 
         prog_bar = tqdm(
-            total=int(10 * duration_s),
+            total=int(duration_s / self.shared_mem.iv_out.DURATION_CHUNK_S),  # chunk-count
             desc="Measurement",
             unit="n",
             leave=False,
+            mininterval=1.0,
         )
 
         # Main Loop
         ts_data_last = self.start_time
-        buffer_segment_last = math.floor(duration_s / self.segment_period_s)
+        eenv_last_chunk = math.floor(duration_s / self.segment_period_s)
         leave_main_loop = False
         for input_data in self.reader.read(
-            start_n=self.buffer_segment_count,
-            end_n=buffer_segment_last,
+            start_n=self.init_buffer_last_chunk,
+            end_n=eenv_last_chunk,
+            n_samples_per_chunk=self.input_chunk_len,
             is_raw=True,
             omit_timestamps=True,
         ):
@@ -316,6 +339,7 @@ class ShepherdEmulator(ShepherdIO):
                 if isinstance(input_data, tuple)
                 else input_data,
                 cal=self.cal_pru,
+                rescale_factor=self.cfg.eenv_rescale_factor,
                 verbose=self.verbose_extra,
             ):
                 data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
@@ -330,8 +354,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
-                    prog_bar.update(n=int(10 * data_iv.duration()))
-                    # TODO: this can't work - with the limiting tracers
+                    prog_bar.update()  # n=1
                     if data_iv.timestamp_s() >= ts_end:
                         log.debug("Out of bound timestamp collected -> begin to exit now")
                         leave_main_loop = True
@@ -381,7 +404,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
-                    prog_bar.update(n=int(10 * data_iv.duration()))
+                    prog_bar.update()  # n=1
                     if data_iv.timestamp_s() > ts_end:
                         log.debug("Out of bound timestamp collected -> will discard")
                         data_iv = None

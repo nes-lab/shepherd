@@ -14,6 +14,7 @@ Comparison between three embedded platforms and their performance. The BeagleBon
 How accurate is the 100 ms trigger on different platforms? Let's visualize the jitter of **one** node.
 
 In numbers:
+
 - simplified
 - `Δ_q1 = 99%-Quantile - 1%-Quantile`
 - `Δ_max = Max - Min`
@@ -36,7 +37,7 @@ In numbers:
 
 ![GPIO-Jitter-RPiCM4](jitter_CM4_010_cm4_baseline_ch0_rising_100ms_jitter.png)
 
-### Some context and final words:
+### Some context and final words
 
 - BBB takes ~ 300 ns to get kernel time. performance looks fine considering the age of the platform
 - BBAI takes ~ 40 ns to get kernel time. the random spikes are still unexplained. It could be caused by register-write-locks. The SOC has several coprocessors that share the same bus (linux shows 2ß rProc). Also the system is missing a RT-Kernel.
@@ -45,6 +46,7 @@ In numbers:
 ## Sync Performance
 
 In numbers:
+
 - `Δ_q1 = 99%-Quantile - 1%-Quantile`
 - `Δ_max = Max - Min`
 

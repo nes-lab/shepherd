@@ -53,28 +53,28 @@ The firmwares use GPIO to signal their states. Additionally, the Chip-Select of 
 
 ### Debug PRU0-Init
 
-  - GPIO.b11, init all states, ~ 800 ns
-  - GPIO.b00, init msg_sys, unblock PRU1, (reset-marker), send-status, init buffers, ~ 450 ns
-  - GPIO.b11, sample_init, ~ 20 us
-    - 4x toggle of GPIO1
-  - GPIO.b00, idle -> enter sample-loop, ~ 400 ns
-  - long 50 ms wait, then normal looping?
+- GPIO.b11, init all states, ~ 800 ns
+- GPIO.b00, init msg_sys, unblock PRU1, (reset-marker), send-status, init buffers, ~ 450 ns
+- GPIO.b11, sample_init, ~ 20 us
+  - 4x toggle of GPIO1
+- GPIO.b00, idle -> enter sample-loop, ~ 400 ns
+- long 50 ms wait, then normal looping?
 
 Note: during restart of kernel module, Pru0 seems to boot ~ 60 ms earlier than Pru1
 
 ### Debug PRU1-Init
 
-  - GPIO.b11, small init + wait for pru0 (Sync PRUs), ~ 180 ns
-  - GPIO.b00, init msg_sys, ~ 140 ns
-  - (reset-marker)
-  - GPIO.b01, send status, ~ 310 ns
-  - GPIO.b10, (re)init IEP, ~ 800 ns
-  - (begin of event_loop)
-  - GPIO.b00, init event-loop, ~ 520 ns
-  - GPIO.b01, wait for kernels sync-reset, ~ 114 ms (with 10 ms wait of kernel after loading fw)
-  - GPIO.b10, wait for first interrupt from linux host, < 100 ms
-  - GPIO.b00, start central-loop
-  - (exit of event loop)
+- GPIO.b11, small init + wait for pru0 (Sync PRUs), ~ 180 ns
+- GPIO.b00, init msg_sys, ~ 140 ns
+- (reset-marker)
+- GPIO.b01, send status, ~ 310 ns
+- GPIO.b10, (re)init IEP, ~ 800 ns
+- (begin of event_loop)
+- GPIO.b00, init event-loop, ~ 520 ns
+- GPIO.b01, wait for kernels sync-reset, ~ 114 ms (with 10 ms wait of kernel after loading fw)
+- GPIO.b10, wait for first interrupt from linux host, < 100 ms
+- GPIO.b00, start central-loop
+- (exit of event loop)
 
 ### Debug PRU0-MainLoop
 
@@ -140,13 +140,13 @@ Challenges while porting firmware to also be compatible with GCC.
 ### Assembly (solved)
 
 - file-ending is different
-	- CGT: `.asm`
-	- GCC: `.s`
+  - CGT: `.asm`
+  - GCC: `.s`
 - setting assembly-constants differs from ti compiler (CGT)
-	- CGT: `VAR .set value`
-	- GCC: `.equ VAR, value`
+  - CGT: `VAR .set value`
+  - GCC: `.equ VAR, value`
 - fix is to use [+x with gcc](https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html)
-	-  encapsulation `-x assembler SRCASM -x none` when loading the asm-sources into the compiler
+  - encapsulation `-x assembler SRCASM -x none` when loading the asm-sources into the compiler
 
 ### Multiplication (solved)
 
@@ -158,10 +158,10 @@ Challenges while porting firmware to also be compatible with GCC.
 
 - pru1-code compiles, but pru0 fails with ~ 3 kB overflow of program memory (8 kB)
 - disabling debug-symbols (`-g0`) does not change program memory, but size of elf-file gets reduced significantly
-	- pru1 fw size shrinks from > 40 kB to < 8 kB
+  - pru1 fw size shrinks from > 40 kB to < 8 kB
 - link-time-optimization helps somewhat (`-flto`, `-fuse-linker-plugin`)
-	- pru1 fw size shrinks from 7.38 kB to 6.30 kB
-	- pru0 overflow reduces from 3060 byte to 2690 byte
+  - pru1 fw size shrinks from 7.38 kB to 6.30 kB
+  - pru0 overflow reduces from 3060 byte to 2690 byte
 - disabling some debug code had just minimal change (-20 byte)
 - did read through gnupru github-issues, but found no clue
 - did read through large parts of gcc v12.1 doc (gcc.pdf) with no luck
@@ -169,9 +169,9 @@ Challenges while porting firmware to also be compatible with GCC.
 - compiling code with `uint32`-only (replaced `uint64`) works
 - compiling u32 with `-fno-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
 - compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes.
-	- is this a self-made inline-fuckup?
-	- removing `inline` from our codebase brings overflow back to 2672 bytes
-	- that's strange
+  - is this a self-made inline-fuckup?
+  - removing `inline` from our codebase brings overflow back to 2672 bytes
+  - that's strange
 - comparing functions-size between source with u64 and u32-mod
   - converter_xyz-Fns grow by factor 1.6 to 2.4
 - **issue report confirmed at least 2 gcc-bugs**

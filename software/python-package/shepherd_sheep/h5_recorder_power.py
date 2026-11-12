@@ -8,6 +8,7 @@ import numpy as np
 from shepherd_core.data_models.base.calibration import CalibrationEmulator as CalEmu
 from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
 from shepherd_core.data_models.content.enum_datatypes import Compression
+from shepherd_core.data_models.experiment.observer_features import samplerates_supported
 
 from . import commons
 from .h5_monitor_abc import Monitor
@@ -29,10 +30,14 @@ class PowerRecorder(Monitor):
             target,
             compression,
             poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
-            chunk_size=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
-            # NOTE: was 10 x CHUNK/REDUCTION_FACTOR, BUT performance was worse!
+            increment_factor=20,
+            chunk_size=10_000,
+            # NOTE: was SharedMemIVOutput.N_SAMPLES_PER_CHUNK, but hope to lower large nw-bursts
         )
-        if reduction_factor not in [1, 10, 100, 1_000, 10_000]:
+        reductions_supported = [
+            commons.SAMPLE_RATE_DEFAULT_SPS // rate for rate in samplerates_supported
+        ]
+        if reduction_factor not in reductions_supported:
             raise ValueError("reduction-factor must be 10^n, n=[0..4]")
         self.reduction_factor: int = reduction_factor
         self.reduce: bool = self.reduction_factor != 1
@@ -70,19 +75,19 @@ class PowerRecorder(Monitor):
                 self.transform_data_float_full if self.use_float else self.transform_data_int_full
             )
 
-        self.data.create_dataset(
+        self.ds_value = self.data.create_dataset(
             name="value",
-            shape=(self.increment_size,),
+            shape=(self.ds_size,),
             dtype="u4",
             maxshape=(None,),
             chunks=(self.chunk_size,),
             compression=compression,
             shuffle=True,
         )
-        self.data["value"].attrs["unit"] = "W"
-        self.data["value"].attrs["description"] = "Power [W] = value/nW * gain + (offset)"
-        self.data["value"].attrs["gain"] = self.gain
-        self.data["value"].attrs["offset"] = 0
+        self.ds_value.attrs["unit"] = "W"
+        self.ds_value.attrs["description"] = "Power [W] = value/nW * gain + (offset)"
+        self.ds_value.attrs["gain"] = self.gain
+        self.ds_value.attrs["offset"] = 0
 
         self.dropped_data = False
         self.queue_size = int(
@@ -109,7 +114,7 @@ class PowerRecorder(Monitor):
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
-        self.data["value"].resize((self.position,))
+        self.ds_value.resize((self.position,))
         super().__exit__()
 
     def write(self, data: IVTrace) -> None:
@@ -209,13 +214,12 @@ class PowerRecorder(Monitor):
             else:
                 ds_time, ds_pwr = self.transform_data(self.queue.get())
                 pos_end = self.position + len(ds_time)
-                data_length = len(self.data["time"])
-                if pos_end >= data_length:
-                    data_length += self.increment_size
-                    self.data["time"].resize((data_length,))
-                    self.data["value"].resize((data_length,))
-                self.data["time"][self.position : pos_end] = ds_time
-                self.data["value"][self.position : pos_end] = ds_pwr
+                if pos_end >= self.ds_size:
+                    self.ds_size += self.increment_size
+                    self.ds_time.resize((self.ds_size,))
+                    self.ds_value.resize((self.ds_size,))
+                self.ds_time[self.position : pos_end] = ds_time
+                self.ds_value[self.position : pos_end] = ds_pwr
                 self.position = pos_end
         log.debug("[%s] thread ended itself", type(self).__name__)
 
@@ -227,9 +231,9 @@ class PowerRecorder(Monitor):
         had_error = False
         if self.position < 1:
             return had_error
-        gain = self.data["time"].attrs["gain"]
-        file_start = self.data["time"][0] * gain
-        file_end = self.data["time"][self.position - 1] * gain
+        gain = self.ds_time.attrs["gain"]
+        file_start = self.ds_time[0] * gain
+        file_end = self.ds_time[self.position - 1] * gain
         if file_start > t_start:
             log.error("Recorder missed %.3f s IVTrace after start", file_start - t_start)
             had_error = True
@@ -244,10 +248,10 @@ class PowerRecorder(Monitor):
         """Reshape some datasets with predictable length."""
         runtime_addition = 0
         datarate_sps = commons.SAMPLE_RATE_DEFAULT_SPS // self.reduction_factor
-        data_length = max(
-            len(self.data["time"]),
+        self.ds_size = max(
+            len(self.ds_time),
             self.increment_size,
             round(datarate_sps * (runtime_addition + value_s)),
         )
-        self.data["time"].resize((data_length,))
-        self.data["value"].resize((data_length,))
+        self.ds_time.resize((self.ds_size,))
+        self.ds_value.resize((self.ds_size,))

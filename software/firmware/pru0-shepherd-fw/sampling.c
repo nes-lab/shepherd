@@ -179,14 +179,14 @@ void sample()
     {
         /* reordered to prioritize longer routines */
 #ifdef EMU_SUPPORT
-        case MODE_EMULATOR: return sample_emulator();
-        case MODE_EMU_LOOPBACK: return sample_emu_loopback();
+        case MODE_EMULATOR: sample_emulator(); return;
+        case MODE_EMU_LOOPBACK: sample_emu_loopback(); return;
 #endif // EMU_SUPPORT
 #if (defined(HRV_SUPPORT) && HRV_AVAILABLE)
-        case MODE_HARVESTER: return sample_adc_harvester();
+        case MODE_HARVESTER: sample_adc_harvester(); return;
 #endif // HRV_SUPPORT
-        case MODE_EMU_ADC_READ: return sample_emu_ADCs();
-        case MODE_HRV_ADC_READ: return sample_hrv_ADCs();
+        case MODE_EMU_ADC_READ: sample_emu_ADCs(); return;
+        case MODE_HRV_ADC_READ: sample_hrv_ADCs(); return;
         default: msgsys_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode, 0u);
     }
 }
@@ -283,6 +283,11 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
     /* set Input Range = 1.25 * Vref, with Vref = 4.096 V, -> LSB = 19.53 uV */
     __delay_cycles(1000u / TICK_INTERVAL_NS);
     adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_RANGE | RANGE_SEL_P125);
+
+    return;
+    // TODO: disabled for now - test below may misbehave
+    // REASON for the misbehave: cape may be powered off still - so we need a new
+    // flag from userspace that shows "powered_cape"
 
     /* Alert kernel module that this hw-unit seems to be not present
  	 * -> downside: doubles duration of adc-init

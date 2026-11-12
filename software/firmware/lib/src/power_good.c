@@ -1,6 +1,7 @@
 #include "shared_mem.h"
 
 #include "hw_config.h"
+#include "power_good.h"
 
 inline bool power_good_update(void)
 {

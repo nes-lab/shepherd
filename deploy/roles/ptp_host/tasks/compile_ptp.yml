@@ -12,7 +12,7 @@
   until: dl_ptp4l_ret is not failed
   retries: 5
 
-- name: Own tool path
+- name: Take ownership of tool path
   ansible.builtin.file:
     path: "{{ ptp_host_repo_path }}/"
     state: directory

@@ -26,6 +26,7 @@ Here is the example `herd.yaml`-file in the `inventory` directory of the shepher
 ```
 
 :::{note}
+
 1. Only the `sheep:`-block is needed by the tool.
 2. IP-Addresses can be omitted if network is set up to resolve host-names.
 3. To find active observers a ping-sweep (in this example from .1 to .64) can be achieved with:
@@ -33,6 +34,7 @@ Here is the example `herd.yaml`-file in the `inventory` directory of the shepher
 ```Shell
 nmap -sn 192.168.1.1-64
 ```
+
 :::
 
 After setting up the inventory, use `shepherd-herd` to check if all your nodes are responding correctly:
@@ -63,7 +65,7 @@ The tool has integrated help-functionality. For a full list of supported command
 
 The command-line Interface is as follows:
 
-```{eval-rst}
+```text {eval-rst}
 .. click:: shepherd_herd.herd_cli:cli
    :prog: shepherd-herd
    :nested: full

@@ -131,7 +131,9 @@ def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
             "--command=nrf52_recover",
             "--command=exit",
         ]
-        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            cmd, timeout=30, check=False, shell=False, capture_output=True, text=True
+        )
         if ret.returncode > 0:
             log.warning("Error during chip-erase (OpenOCD): %s", ret.stderr)
             raise RuntimeError  # noqa: TRY301
@@ -145,7 +147,9 @@ def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
             f"--command=program {cfg.firmware_file.as_posix()} verify reset",
             "--command=exit",
         ]
-        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            cmd, timeout=30, check=False, shell=False, capture_output=True, text=True
+        )
         if ret.returncode > 0:
             log.warning("Error during programming (OpenOCD): %s", ret.stderr)
             raise RuntimeError  # noqa: TRY301
@@ -232,7 +236,9 @@ def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
             file_tmp.as_posix(),
             "-Intel",
         ]
-        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            cmd, timeout=30, check=False, shell=False, capture_output=True, text=True
+        )
         if ret.returncode > 0:
             log.error("Error during realignment (srec_cat): %s", ret.stderr)
             failed = True

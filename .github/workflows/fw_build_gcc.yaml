@@ -18,7 +18,7 @@ jobs:
     env:
       # as in roles/sheep/vars/main.yml
       gcc_pru_cc_release: "pru-elf-2026.05.amd64"
-      gcc_pru_support_branch: "linux-6.4.0-rproc"  # TODO: not tried, linux-6.1 related
+      # gcc_pru_support_branch: "linux-6.4.0-rproc" # deactivated -> use latest main
       # weblinks
       link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2026.05/"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
@@ -48,7 +48,8 @@ jobs:
         working-directory: "${{ github.workspace }}"
 
       - name: Install PSSP dependency 🔧
-        run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
+        run: "git clone ${{ env.link_pssp }}"
+        # run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
         working-directory: "${{ github.workspace }}"
 
       - name: temporary size-hack for PRU0 🕚

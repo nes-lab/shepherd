@@ -49,7 +49,7 @@ class Watchdog:
 
         log.debug("Initializing Shepherd-Watchdog v%s", metadata.version("shepherd-sheep"))
         log.debug(
-            "  -> Ack-Signal on pin = %d, interval = %d s", self.cfg.pin_ack, self.cfg.interval
+            "  -> Ack-Signal on pin = %s, interval = %d s", self.cfg.pin_ack, self.cfg.interval
         )
         if self.cfg.autoupdate_hostname:
             with contextlib.suppress(Exception):
@@ -101,6 +101,8 @@ class Watchdog:
             ["/usr/bin/sudo", "/usr/sbin/reboot"],
             timeout=3,
             check=False,
+            shell=False,
+            capture_output=False,
         )
 
     def check_connection(self) -> None:

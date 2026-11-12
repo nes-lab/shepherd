@@ -90,7 +90,7 @@
   tags:
     - pru-tools
 
-- name: Own tool path
+- name: Take ownership of tool path
   ansible.builtin.file:
     path: "{{ sheep_ti_tools_path }}/"
     state: directory

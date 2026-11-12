@@ -45,7 +45,7 @@ Two ICs disappeared from the earth.
 
 ### Target Port - Cape 2.4
 
-```
+```text
 pru_reg     name            BB_pin	sys_pin sys_reg
 r31_00      TARGET_GPIO0    P8_45	P8_14, g0[26] -> 26
 r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27] -> 27
@@ -61,7 +61,7 @@ r30_09/out  TARGET_BAT_OK   P8_29	-
 
 ### Target Port - Cape 2.5
 
-```
+```text
 pru_reg       name              BB_pin	sys_pin sys_reg
 pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART)
 pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART)

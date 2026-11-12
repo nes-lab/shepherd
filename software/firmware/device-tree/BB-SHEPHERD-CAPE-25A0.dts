@@ -15,11 +15,11 @@
 / {
     compatible = "ti,am335x", "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green", "seeed,am335x-bone-green-eco";
 
-   part-number = "BB-SHEPHERD-CAPE";
-   version = "25A0";
+    part-number = "BB-SHEPHERD-CAPE";
+    version = "25A0";
 
-   /* This overlay uses the following resources */
-   exclusive-use =
+    /* This overlay uses the following resources */
+    exclusive-use =
 
         "P8.10", /*     WD ACK */
         "P8_11", /*     pru0_dbg_Led1 */
