@@ -179,14 +179,14 @@ void sample()
     {
         /* reordered to prioritize longer routines */
 #ifdef EMU_SUPPORT
-        case MODE_EMULATOR: return sample_emulator();
-        case MODE_EMU_LOOPBACK: return sample_emu_loopback();
+        case MODE_EMULATOR: sample_emulator(); return;
+        case MODE_EMU_LOOPBACK: sample_emu_loopback(); return;
 #endif // EMU_SUPPORT
 #if (defined(HRV_SUPPORT) && HRV_AVAILABLE)
-        case MODE_HARVESTER: return sample_adc_harvester();
+        case MODE_HARVESTER: sample_adc_harvester(); return;
 #endif // HRV_SUPPORT
-        case MODE_EMU_ADC_READ: return sample_emu_ADCs();
-        case MODE_HRV_ADC_READ: return sample_hrv_ADCs();
+        case MODE_EMU_ADC_READ: sample_emu_ADCs(); return;
+        case MODE_HRV_ADC_READ: sample_hrv_ADCs(); return;
         default: msgsys_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode, 0u);
     }
 }
