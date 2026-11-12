@@ -9,6 +9,9 @@ Sheep
 - add & update performance-benchmarks
 - fix writing gpio-mask to PRU
 - fix emu with no power-tracing
+- new experiment parameters for emulation
+  - add rescale factor for eenvs
+  - add start_offset for eenvs
 - improve performance substantially (emu & hrv)
   - use float-point-ops for power-calculation
   - avoid cache-problems in hdf5-datasets (power-trace @ full rate)
@@ -36,6 +39,7 @@ Sheep
   - add .check_status() to determine health of embedded data
   - add .flush_queues() to make sure data is fully written
   - add .shutdown_thread() to minimize boilerplate-code
+  - add parameters (ignore unrelated errors, customize allowed sync-offset)
 - derive info about supported samplerates from core-lib
 - reduce chunk-size of power-tracers (to hopefully reduce the large writeburst)
 - teach pytest to respect small tmpfs-partition (cleanup between tests)
@@ -45,6 +49,7 @@ Sheep
   - monitors for PHC2SYS & PTP warn about too high sync-offset or sync-compensation (now 50 us / 5 MHz, was 500 us, 50 MHz)
   - backlog is limited to 10 entries; was 60 and resulted in stale errors getting re-mentioned
 - rate-limit the initial buffer fill to avoid network-congestion on testbed
+- optimize usage of subprocesses (avoid shell, request text, ...)
 
 Watchdog
 
@@ -56,6 +61,7 @@ Herd
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
 - make .open() less demanding
 - relax most timeouts and catch more errors during remote-cmd
+- add debug-output when checking content
 
 Ansible
 
@@ -117,11 +123,14 @@ PRUs
 
 Misc
 
+- add stress-test for the testbed (heavy datarates for the oberservers)
 - add custom compiled PTP
+- add traffic-control-service to improve ptp (ptp with e2e-sync assumes a symmetrical channel)
 - update cape-errata, h5-benchmark
 - sheep - fix exception during end of resync
 - make sys-fn more friendly to external testbench
 - add rumdl to lint markdown files
+- update deps
 
 Speed-Benchmark on a Beaglebone Green (compiled from [testbench_direct_rw](https://github.com/nes-lab/shepherd/blob/main/software/python-package/tests_manual/testbench_direct_rw_results.md)):
 
