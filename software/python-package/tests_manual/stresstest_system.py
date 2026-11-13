@@ -24,6 +24,7 @@ from shepherd_sheep.shepherd_run_functions import run_programmer
 
 path_storage = Path("/var/shepherd/experiments")
 path_firmware = Path(__file__).parent / "firmwares"
+duration = 600
 
 log.info(
     "| %s | CPU_min [%%] | CPU_max [%%] | CPU_mean [%%] | File [MiB/s] | Note |", "Type".ljust(34)
@@ -76,7 +77,6 @@ def generate_harvest_file(
 ) -> Path:
     random_str = "random" if random else "static"
     path = path_storage / f"hrv_synth_{random_str}.hrv5"
-    duration = 60
     if not path.exists():
         rng = np.random.default_rng()
         samples_per_1s = 100_000
@@ -117,7 +117,7 @@ def bench_emu_stresstest() -> None:
     cfg = EmulationTask(
         input_path=path_input,
         output_path=path_output,
-        duration=240,
+        duration=duration,
         use_cal_default=True,
         time_start=time_start,
         virtual_source=VirtualSourceConfig(name="neutral"),
