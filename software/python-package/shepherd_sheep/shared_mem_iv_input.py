@@ -205,6 +205,7 @@ class SharedMemIVInput:
         )
         # min() avoids boundary handling in write function
         # find cleaner solution here to avoid boundary handling
+        # TODO: this prevents using larger chunks from hrvReader
 
     def can_fit_new_chunk(self) -> bool:
         return self.get_size_available() >= self.n_samples_per_chunk
@@ -219,6 +220,13 @@ class SharedMemIVInput:
     ) -> bool:
         len_data = len(data)
         if len_data > self.get_size_available():
+            if verbose:
+                log.error(
+                    "[%s] len=%d but space avail = %d",
+                    type(self).__name__,
+                    len_data,
+                    self.get_size_available(),
+                )
             return False  # no available space
         ts_start = time.time() if verbose else None
         if self.index_next is None:
@@ -237,8 +245,16 @@ class SharedMemIVInput:
                 iv_data[:, 0] = data.ds_voltage[:len_data]
                 iv_data[:, 1] = data.ds_current[:len_data]
         else:
-            # reshape just to be safe - its cheap
-            iv_data = data.reshape((len_data, 2), order="C")
+            iv_data = data
+            # just copy - previously there was a useless .reshape((len_data, 2), order="C")
+
+        if iv_data.shape[1] != 2:
+            log.error(
+                "[%s] Input-data has wrong shape %s, expected [##, 2]",
+                type(self).__name__,
+                str(iv_data.shape),
+            )
+            return False
 
         # apply custom scaling, if wanted
         if rescale_factor != 1.0:

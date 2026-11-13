@@ -74,7 +74,8 @@ class ShepherdEmulator(ShepherdIO):
         if self.reader.get_mode() != "harvester":
             log.error("Input-File has wrong mode (%s != harvester)", self.reader.get_mode())
 
-        self.input_chunk_len = self.reader.CHUNK_SAMPLES_N  # TODO: make it larger?
+        self.input_chunk_len = commons.SAMPLES_PER_SYNC  # self.reader.CHUNK_SAMPLES_N
+        # TODO: trouble with buffer when using hrvReader
         self.init_buffer_last_chunk: int = 0  # just a placeholder
         cal_inp = self.reader.get_calibration_data()
 
@@ -235,7 +236,7 @@ class ShepherdEmulator(ShepherdIO):
             if not self.shared_mem.iv_inp.write_iv(
                 data=IVTrace(voltage=input_data[1], current=input_data[2])
                 if isinstance(input_data, tuple)
-                else input_data,
+                else input_data,  # HrvReader
                 cal=self.cal_pru,
                 rescale_factor=self.cfg.eenv_rescale_factor,
                 verbose=False,
@@ -337,7 +338,7 @@ class ShepherdEmulator(ShepherdIO):
             while not self.shared_mem.iv_inp.write_iv(
                 data=IVTrace(voltage=input_data[1], current=input_data[2])
                 if isinstance(input_data, tuple)
-                else input_data,
+                else input_data,  # HrvReader
                 cal=self.cal_pru,
                 rescale_factor=self.cfg.eenv_rescale_factor,
                 verbose=self.verbose_extra,
