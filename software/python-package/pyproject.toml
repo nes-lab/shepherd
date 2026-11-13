@@ -1,5 +1,5 @@
 [project]
-name = "shepherd_sheep"
+name = "shepherd-sheep"
 description = "Synchronized Energy Harvesting Emulator and Recorder"
 keywords = ["testbed", "beaglebone", "pru", "batteryless", "energyharvesting", "solar"]
 
@@ -85,7 +85,7 @@ shepherd-launcher = "shepherd_launcher:main"
 shepherd-watchdog = "shepherd_watchdog:main"
 
 [build-system]
-requires = ["uv_build>=0.11.0,<0.14.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
