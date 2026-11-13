@@ -234,6 +234,17 @@ int32_t event_loop()
         timer_ns = iep_get_cnt_val();
         if (read_r31() & HOST_INT_TIMESTAMP_MASK) host_int_early = 1u;
 
+        /* timer wrap detection */
+        if (timer_ns < last_timer_ns)
+        {
+            /* Copy of single OP from pru0
+               This Update is done twice (also in pru0/main.c#L241)
+               Should be safe & is needed to prevent race-condition
+               GpioRec had rare single samples 100 ms in the past before
+            */
+            SHARED_MEM.last_sync_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
+        }
+
         DEBUG_GPIO_STATE_1;
         check_gpio(timer_ns);
         DEBUG_GPIO_STATE_0;
@@ -278,7 +289,6 @@ int32_t event_loop()
             SHARED_MEM.cmp0_trigger_for_pru1 = 0;
 
             /* update clock compensation of sample-trigger */
-            //iep_set_cmp_val(IEP_CMP1, 0); // TODO: is this correct?
             iep_enable_evt_cmp(IEP_CMP1);
 
             SHARED_MEM.next_sync_timestamp_ns += SYNC_INTERVAL_NS;
